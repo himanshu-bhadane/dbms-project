@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Dental EMR</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='32' fill='%230d6efd'/%3E%3Cpath fill='%23fff' d='M26 14h12v12h12v12H38v12H26V38H14V26h12z'/%3E%3C/svg%3E">
+<style>
+:root{--bg:#ffffff;--card:#ffffff;--ink:#212529;--mut:#6c757d;--acc:#0d6efd;--err:#dc3545;--ok:#198754;--bd:#dee2e6}
+*{box-sizing:border-box}body{margin:0;font:14px/1.45 system-ui,sans-serif;background:var(--bg);color:var(--ink)}
+header{display:flex;align-items:center;gap:12px;padding:12px 22px;background:var(--acc);color:#fff;font-weight:600;font-size:16px}
+header svg{width:34px;height:34px;flex:none}
+nav{display:flex;gap:4px;padding:10px 22px 0;flex-wrap:wrap}
+nav button{border:0;background:none;color:var(--mut);padding:8px 14px;font:inherit;cursor:pointer;border-bottom:2px solid transparent}
+nav button.on{color:var(--acc);border-color:var(--acc);font-weight:600}
+main{padding:14px 22px;display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(460px,1fr))}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:8px;padding:14px;min-width:0}
+.card h3{margin:0 0 2px;font-size:15px}.note{color:var(--mut);font-size:12px;margin-bottom:10px}
+form{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;align-items:end}
+label{font-size:11px;color:var(--mut);display:block}
+input,select{width:100%;padding:6px 8px;border:1px solid var(--bd);border-radius:5px;background:var(--bg);color:var(--ink);font:inherit}
+button.run{background:var(--acc);color:#fff;border:0;border-radius:5px;padding:8px 14px;cursor:pointer;font:inherit}
+.res{margin-top:10px;overflow-x:auto;max-height:340px;overflow-y:auto}
+.err{color:var(--err);font-weight:600}.ok{color:var(--ok);font-weight:600}
+table{border-collapse:collapse;width:100%;font-size:12.5px}th,td{padding:5px 8px;border-bottom:1px solid var(--bd);text-align:left;white-space:nowrap}
+th{position:sticky;top:0;background:var(--card);color:var(--mut)}
+</style></head><body>
+<header><svg viewBox="0 0 64 64" aria-label="Hospital logo"><circle cx="32" cy="32" r="32" fill="#fff"/><path fill="#0d6efd" d="M26 14h12v12h12v12H38v12H26V38H14V26h12z"/></svg>Dental EMR - Appointment Management (JDBC backend demo)</header>
+<nav id="nav"></nav><main id="main"></main>
+<script>
+const today=new Date().toISOString().slice(0,10), ago=new Date(Date.now()-120*864e5).toISOString().slice(0,10);
+const DEF={date:today,from:ago,to:today,status:'Checked-In',gender:'Male',type:'In-Clinic',channel:'Reception',mode:'Cash',payStatus:'Paid',day:'Monday',available:'yes'};
+const SEL={status:'Checked-In|No-Show|Cancelled',gender:'Male|Female|Other',type:'In-Clinic|Home Visit|Video Consultation',channel:'Reception|Call Center|Patient Portal',
+ mode:'Cash|Card|UPI|Wallet',payStatus:'Paid|Pending',day:'Monday|Tuesday|Wednesday|Thursday|Friday|Saturday',available:'yes|no'};
+const TYPE={dob:'date',date:'date',from:'date',to:'date',time:'time',start:'time',end:'time'};
+// {t:title, ep:endpoint, f:fields, n:note = the backend rule this action demonstrates, auto:run on load}
+const TABS={
+Overview:[
+ {t:'Clinic-wise revenue',ep:'r-revenue',f:['from','to'],auto:1,n:'ReportDao: CLINIC LEFT JOIN APPOINTMENT LEFT JOIN PAYMENT, grouped; Paid vs Pending split.'},
+ {t:'Payment summary',ep:'r-payments',f:['from','to'],auto:1,n:'GROUP BY PaymentMode, PaymentStatus.'},
+ {t:'Doctor workload',ep:'r-workload',f:['from','to'],auto:1,n:'Completed / no-show / cancelled counts + revenue per doctor.'},
+ {t:'Clinics',ep:'clinics',f:[],auto:1,n:'ClinicDao.all()'}],
+Patients:[
+ {t:'Find patients',ep:'patients',f:['id','phone','name'],auto:1,n:'Search by ID, phone (exact) or name (LIKE). Blank = list all.'},
+ {t:'Register patient',ep:'patient-register',f:['name','gender','dob','phone','email','address','ecName','ecNumber','history'],n:'Age is computed from DOB; phone must be 10 digits and unique (pre-check + DB UNIQUE).'},
+ {t:'Patient visit history',ep:'r-history',f:['patientId'],n:'APPOINTMENT LEFT JOIN TREATMENT LEFT JOIN PAYMENT, newest first.'}],
+Appointments:[
+ {t:'Search appointments',ep:'appt-search',f:['patientId','doctorId','clinicId','date'],auto:1,n:'Any combination of filters, built with bound parameters.'},
+ {t:'Book appointment',ep:'appt-book',f:['patientId','doctorId','clinicId','operatoryId','date','time','type','channel','complaint'],n:'Checks roster + IsAvailable, operatory belongs to clinic, no double-booking (doctor/room/patient), row-locks against races.'},
+ {t:'Change status',ep:'appt-status',f:['id','status'],n:'Enforced workflow: Confirmed -> Checked-In/No-Show/Cancelled; Checked-In -> Cancelled. Try an illegal jump.'},
+ {t:'Complete visit',ep:'appt-complete',f:['id','performed','diagnosis','notes','medicines','followUp','cost','mode','payStatus'],n:'ONE transaction: status=Show + TREATMENT + PAYMENT + receipt. Any failure rolls everything back.'},
+ {t:'Reschedule',ep:'appt-reschedule',f:['id','date','time'],n:'Only Confirmed appointments; slot rules re-checked excluding itself.'},
+ {t:'Settle pending payment',ep:'appt-settle',f:['id'],n:'Pending -> Paid.'},
+ {t:'Daily schedule',ep:'r-daily',f:['date','clinicId'],n:'Report: all appointments on a day, optional clinic. Sample data spans ~Jul-Sep 2026.'}],
+Doctors:[
+ {t:'Doctors',ep:'doctors',f:['clinicId'],auto:1,n:'Blank = all; with clinic = doctors rostered there (M:N via DOCTOR_SCHEDULE).'},
+ {t:'Doctor roster',ep:'roster',f:['doctorId'],n:'Weekly schedule across clinics, ordered Mon-Sun.'},
+ {t:'Add roster slot',ep:'roster-add',f:['doctorId','clinicId','day','start','end'],n:'end > start; rejects overlap with the same doctor\'s other slots that weekday.'},
+ {t:'Leave on/off',ep:'leave',f:['scheduleId','available'],n:'Sets IsAvailable; bookings in that slot are then rejected.'}],
+Clinics:[
+ {t:'Operatories',ep:'operatories',f:['clinicId'],n:'Rooms of a clinic (1:M).'},
+ {t:'Employees',ep:'employees',f:['clinicId'],n:'Staff of a clinic (1:M).'}]
+};
+const $=(h)=>{const d=document.createElement('div');d.innerHTML=h;return d.firstElementChild};
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function field(n){const v=DEF[n]??'';
+ if(SEL[n])return `<div><label>${n}</label><select name="${n}">${SEL[n].split('|').map(o=>`<option ${o==v?'selected':''}>${o}</option>`).join('')}</select></div>`;
+ return `<div><label>${n}</label><input name="${n}" type="${TYPE[n]||'text'}" value="${v}"></div>`}
+async function run(a,form,out){
+ out.innerHTML='<span class="note">running...</span>';
+ try{const r=await fetch('/api/'+a.ep,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams(new FormData(form))});
+  const j=await r.json();
+  if(j.error)out.innerHTML=`<div class="err">✗ ${esc(j.error)}</div>`;
+  else if(j.message)out.innerHTML=`<div class="ok">✓ ${esc(j.message)}</div>`;
+  else if(!j.rows.length)out.innerHTML='<span class="note">(no rows)</span>';
+  else out.innerHTML=`<table><tr>${j.cols.map(c=>`<th>${esc(c)}</th>`).join('')}</tr>${j.rows.map(r=>`<tr>${r.map(c=>`<td>${esc(c)}</td>`).join('')}</tr>`).join('')}</table><div class="note">${j.rows.length} row(s)</div>`;
+ }catch(e){out.innerHTML=`<div class="err">✗ cannot reach backend: ${esc(e.message)}</div>`}}
+function show(name){
+ document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.textContent==name));
+ const m=document.getElementById('main');m.innerHTML='';
+ TABS[name].forEach(a=>{
+  const c=$(`<div class="card"><h3>${a.t}</h3><div class="note">${a.n}</div><form>${a.f.map(field).join('')}<div><button class="run" type="submit">Run</button></div></form><div class="res"></div></div>`);
+  const f=c.querySelector('form'),o=c.querySelector('.res');
+  f.onsubmit=e=>{e.preventDefault();run(a,f,o)};m.appendChild(c);if(a.auto)run(a,f,o)})}
+const nav=document.getElementById('nav');
+Object.keys(TABS).forEach(k=>{const b=document.createElement('button');b.textContent=k;b.onclick=()=>show(k);nav.appendChild(b)});
+show('Overview');
+</script></body></html>
