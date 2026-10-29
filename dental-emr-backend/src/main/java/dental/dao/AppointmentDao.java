@@ -3,6 +3,7 @@ package dental.dao;
 import dental.db.Sql;
 import dental.db.Sql.RowMapper;
 import dental.model.Models.Appointment;
+import java.util.List;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -56,5 +57,16 @@ public final class AppointmentDao {
     public boolean patientBusy(Connection c, int patientId, LocalDate d, LocalTime t, int excludeId) throws SQLException {
         return Sql.exists(c, "SELECT 1 FROM APPOINTMENT WHERE PatientID=? AND AppointmentDate=? AND AppointmentTime=?" + LIVE,
                 patientId, d, t, excludeId);
+    }
+    /** Times at which the doctor already has a live (non-cancelled) appointment on that date. */
+    public List<LocalTime> doctorTimes(Connection c, int doctorId, LocalDate d) throws SQLException {
+        return Sql.query(c, "SELECT AppointmentTime FROM APPOINTMENT WHERE DoctorID=? AND AppointmentDate=? "
+                + "AND AppointmentStatus<>'Cancelled'", rs -> Sql.time(rs, "AppointmentTime"), doctorId, d);
+    }
+
+    /** Operatories of a clinic already taken at that date + time. */
+    public List<Integer> busyOperatories(Connection c, int clinicId, LocalDate d, LocalTime t) throws SQLException {
+        return Sql.query(c, "SELECT OperatoryID FROM APPOINTMENT WHERE ClinicID=? AND AppointmentDate=? "
+                + "AND AppointmentTime=? AND AppointmentStatus<>'Cancelled'", rs -> rs.getInt(1), clinicId, d, t);
     }
 }

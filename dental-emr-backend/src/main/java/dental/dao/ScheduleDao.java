@@ -43,4 +43,9 @@ public final class ScheduleDao {
         return Sql.exists(c, "SELECT 1 FROM DOCTOR_SCHEDULE WHERE DoctorID=? AND ClinicID=? AND DayOfWeek=? "
                 + "AND IsAvailable=TRUE AND StartTime<=? AND EndTime>?", doctorId, clinicId, day, t, t);
     }
+    /** Available roster windows of a doctor at a clinic on one weekday (used to generate bookable slots). */
+    public List<Schedule> forDay(Connection c, int doctorId, int clinicId, String day) throws SQLException {
+        return Sql.query(c, "SELECT * FROM DOCTOR_SCHEDULE WHERE DoctorID=? AND ClinicID=? AND DayOfWeek=? "
+                + "AND IsAvailable=TRUE ORDER BY StartTime", M, doctorId, clinicId, day);
+    }
 }

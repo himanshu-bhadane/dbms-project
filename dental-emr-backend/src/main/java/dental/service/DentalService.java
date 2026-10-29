@@ -4,6 +4,7 @@ import dental.dao.*;
 import dental.db.Db;
 import dental.db.Table;
 import dental.model.Models.*;
+import dental.db.Sql;
 
 import java.math.BigDecimal;
 import java.sql.Connection;
@@ -83,16 +84,26 @@ public final class DentalService {
 
     // ------------------------------------------------------------------ patients
     public int registerPatient(String name, String gender, LocalDate dob, String phone, String email, String address,
-                               String ecName, String ecNumber, String history) {
-        blank(name, "Name"); blank(gender, "Gender"); blank(address, "Address");
-        need(dob != null && !dob.isAfter(LocalDate.now()), "Date of birth must be in the past");
-        need(phone != null && phone.matches("\\d{10}"), "Phone must be 10 digits");
-        need(email == null || email.contains("@"), "Email looks invalid");
-        need(ecNumber == null || ecNumber.matches("\\d{10}"), "Emergency number must be 10 digits");
-        int age = Period.between(dob, LocalDate.now()).getYears();   // Age is derived, never typed by the user
-        return tx(c -> {
-            need(patients.findByPhone(c, phone).isEmpty(), "A patient with this phone number already exists");
-            return patients.insert(c, new Patient(0, name.trim(), gender, dob, age, phone, email, address.trim(), ecName, ecNumber, history));
+        String ecName, String ecNumber, String history) {
+        return registerPatient(name, gender, dob, phone, email, address, ecName, ecNumber, history, null);
+    }
+
+    /** If passwordHash is non-null, a PATIENT login (username = phone) is created in the SAME transaction. */
+    public int registerPatient(String name, String gender, LocalDate dob, String phone, String email, String address,
+            String ecName, String ecNumber, String history, String passwordHash) {
+            blank(name, "Name"); blank(gender, "Gender"); blank(address, "Address");
+            need(dob != null && !dob.isAfter(LocalDate.now()), "Date of birth must be in the past");
+            need(phone != null && phone.matches("\\d{10}"), "Phone must be 10 digits");
+            need(email == null || email.contains("@"), "Email looks invalid");
+            need(ecNumber == null || ecNumber.matches("\\d{10}"), "Emergency number must be 10 digits");
+            int age = Period.between(dob, LocalDate.now()).getYears();   // Age is derived, never typed by the user
+            return tx(c -> {
+            need(patients.findByPhone(c, phone).isEmpty(), "A patient with this phone number already exists - log in or use 'Forgot password'");
+            int id = patients.insert(c, new Patient(0, name.trim(), gender, dob, age, phone, email, address.trim(), ecName, ecNumber, history));
+            if (passwordHash != null)
+            Sql.update(c, "INSERT INTO USER_ACCOUNT (Username, PasswordHash, Role, PatientID) VALUES (?,?,'PATIENT',?)",
+            phone, passwordHash, id);
+            return id;
         });
     }
 
@@ -304,8 +315,118 @@ public final class DentalService {
     }
     public Table dailySchedule(LocalDate d, Integer clinicId) { return tx(c -> reports.dailySchedule(c, d, clinicId)); }
     public Table doctorSchedule(int doctorId)                  { return tx(c -> reports.doctorSchedule(c, doctorId)); }
-    public Table patientHistory(int patientId)                 { return tx(c -> reports.patientHistory(c, patientId)); }
-    public Table clinicRevenue(LocalDate from, LocalDate to)   { return tx(c -> reports.clinicRevenue(c, from, to)); }
-    public Table paymentSummary(LocalDate from, LocalDate to)  { return tx(c -> reports.paymentSummary(c, from, to)); }
-    public Table doctorWorkload(LocalDate from, LocalDate to)  { return tx(c -> reports.doctorWorkload(c, from, to)); }
+    public Table patientHistory(int patientId)                 { return patientHistory(patientId, null); }
+    public Table patientHistory(int patientId, Integer clinicId) { return tx(c -> reports.patientHistory(c, patientId, clinicId)); }
+    public Table clinicRevenue(LocalDate from, LocalDate to)   { return clinicRevenue(from, to, null); }
+    public Table clinicRevenue(LocalDate from, LocalDate to, Integer clinicId)  { return tx(c -> reports.clinicRevenue(c, from, to, clinicId)); }
+    public Table paymentSummary(LocalDate from, LocalDate to)  { return paymentSummary(from, to, null); }
+    public Table paymentSummary(LocalDate from, LocalDate to, Integer clinicId) { return tx(c -> reports.paymentSummary(c, from, to, clinicId)); }
+    public Table doctorWorkload(LocalDate from, LocalDate to)  { return doctorWorkload(from, to, null); }
+    public Table doctorWorkload(LocalDate from, LocalDate to, Integer clinicId) { return tx(c -> reports.doctorWorkload(c, from, to, clinicId)); }
+    /** Bookable start times (30-min steps) for a doctor at a clinic on a date: rostered + available + not already taken. */
+    public Table freeSlots(int doctorId, int clinicId, LocalDate date) {
+        need(date != null && !date.isBefore(LocalDate.now()), "Pick today or a later date");
+        return tx(c -> {
+            need(doctors.findById(c, doctorId).isPresent(), "Doctor not found");
+            need(clinics.findById(c, clinicId).isPresent(), "Clinic not found");
+            Set<LocalTime> taken = new HashSet<>(appts.doctorTimes(c, doctorId, date));
+            boolean today = date.equals(LocalDate.now());
+            LocalTime now = LocalTime.now();
+            List<List<String>> rows = new ArrayList<>();
+            for (Schedule w : schedules.forDay(c, doctorId, clinicId, weekday(date))) {
+                LocalTime t = w.start();
+                while (t.isBefore(w.end())) {
+                    if (!taken.contains(t) && !(today && !t.isAfter(now))) rows.add(List.of(t.toString()));
+                    LocalTime next = t.plusMinutes(30);
+                    if (!next.isAfter(t)) break;          // guards against wrapping past midnight
+                    t = next;
+                }
+            }
+            return new Table(List.of("Time"), rows);
+        });
+    }
+
+    /** Operatories of the clinic that are free at that date + time. */
+    public Table freeRooms(int clinicId, LocalDate date, LocalTime time) {
+        need(date != null && time != null, "Date and time are required");
+        return tx(c -> {
+            need(clinics.findById(c, clinicId).isPresent(), "Clinic not found");
+            Set<Integer> busy = new HashSet<>(appts.busyOperatories(c, clinicId, date, time));
+            List<List<String>> rows = new ArrayList<>();
+            for (Operatory o : operatories.byClinic(c, clinicId))
+                if (!busy.contains(o.id())) rows.add(List.of(String.valueOf(o.id()), o.type()));
+            return new Table(List.of("OperatoryID", "Type"), rows);
+        });
+    }
+        /** Self-service booking: like book(), but the system picks the room (General Checkup > Consultation > any). */
+    public int bookAuto(int patientId, int doctorId, int clinicId, LocalDate date, LocalTime time,
+        String type, String channel, String complaint) {
+        in(type, TYPES, "Type"); in(channel, CHANNELS, "Channel");
+        need(date != null && time != null, "Date and time are required");
+        need(!date.isBefore(LocalDate.now()), "Cannot book in the past");
+        need(!(date.equals(LocalDate.now()) && !time.isAfter(LocalTime.now())), "That time has already passed");
+        return tx(c -> {
+        doctors.lock(c, doctorId);
+        need(patients.findById(c, patientId).isPresent(), "Patient not found");
+        need(doctors.findById(c, doctorId).isPresent(), "Doctor not found");
+        need(clinics.findById(c, clinicId).isPresent(), "Clinic not found");
+        List<Operatory> ops = operatories.byClinic(c, clinicId);      // ordered by id, so lock order is consistent
+        for (Operatory o : ops) operatories.lock(c, o.id());
+        Set<Integer> busy = new HashSet<>(appts.busyOperatories(c, clinicId, date, time));
+        Operatory room = ops.stream().filter(o -> !busy.contains(o.id()))
+                .min(Comparator.comparingInt(o -> roomRank(o.type())))
+                .orElseThrow(() -> new BusinessException("No room is free at that time - pick another time"));
+        checkSlot(c, patientId, doctorId, clinicId, room.id(), date, time, 0);
+        return appts.insert(c, new Appointment(0, date, time, type, "Confirmed", channel, complaint,
+                patientId, doctorId, clinicId, room.id()));
+        });
+        }
+
+        private static int roomRank(String type) {
+        return "General Checkup Room".equals(type) ? 0 : "Consultation Room".equals(type) ? 1 : 2;
+        }
+
+        /** Patient edits their own email/address. Phone is the login username, so it is deliberately not editable here. */
+        public void updateProfile(int patientId, String email, String address) {
+        blank(address, "Address");
+        need(email == null || email.contains("@"), "Email looks invalid");
+        tx(c -> {
+        Patient p = patients.findById(c, patientId).orElseThrow(() -> new BusinessException("Patient not found"));
+        patients.updateContact(c, patientId, p.phone(), email, address.trim());
+        return null;
+        });
+    }
+        // ------------------------------------------------------------------ public landing-page stats
+        private volatile Map<String, Object> statsCache;
+        private volatile long statsAt;
+    
+        private static int count(Connection c, String sql) throws SQLException {
+            return Sql.one(c, sql, rs -> rs.getInt(1)).orElse(0);
+        }
+    
+        /** Aggregates only, safe to show without login. Cached for 60 s. */
+        public Map<String, Object> publicStats() {
+            long now = System.currentTimeMillis();
+            Map<String, Object> cached = statsCache;
+            if (cached != null && now - statsAt < 60_000) return cached;
+            Map<String, Object> m = tx(c -> {
+                Map<String, Object> r = new LinkedHashMap<>();
+                r.put("patients", count(c, "SELECT COUNT(*) FROM PATIENT"));
+                r.put("doctors", count(c, "SELECT COUNT(*) FROM DOCTOR"));
+                r.put("clinics", count(c, "SELECT COUNT(*) FROM CLINIC"));
+                r.put("visits", count(c, "SELECT COUNT(*) FROM APPOINTMENT WHERE AppointmentStatus='Show'"));
+                r.put("specialities", count(c, "SELECT COUNT(DISTINCT Specialisation) FROM DOCTOR"));
+                r.put("clinicList", Sql.query(c, "SELECT ClinicName, ClinicCategory, OperatingHours FROM CLINIC ORDER BY ClinicID", rs -> {
+                    Map<String, Object> x = new LinkedHashMap<>();
+                    x.put("name", rs.getString(1));
+                    x.put("category", rs.getString(2));
+                    x.put("hours", rs.getString(3));
+                    return x;
+                }));
+                return r;
+            });
+            statsCache = m;
+            statsAt = now;
+            return m;
+        }
 }

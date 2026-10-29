@@ -5,6 +5,12 @@ import com.sun.net.httpserver.HttpServer;
 import dental.db.Table;
 import dental.service.BusinessException;
 import dental.service.DentalService;
+import dental.auth.AuthException;
+import dental.auth.AuthService;
+import dental.auth.AuthService.Session;
+import dental.auth.ForbiddenException;
+import dental.auth.Policy;
+import dental.auth.PasswordHasher;
 
 import java.io.InputStream;
 import java.lang.reflect.RecordComponent;
@@ -20,6 +26,7 @@ import java.util.*;
 public final class WebServer {
     interface Fn { Object run(Map<String, String> p) throws Exception; }
     static final DentalService S = new DentalService();
+    static final AuthService AUTH = new AuthService();
     static final Map<String, Fn> R = new LinkedHashMap<>();
 
     static String s(Map<String, String> p, String k) { String v = p.get(k); return v == null || v.isBlank() ? null : v.trim(); }
@@ -47,19 +54,32 @@ public final class WebServer {
         R.put("employees", p -> S.employeesOfClinic(i(p, "clinicId")));
         // appointments
         R.put("appt-search", p -> S.searchAppointments(oi(p, "patientId"), oi(p, "doctorId"), oi(p, "clinicId"), od(p, "date")));
-        R.put("appt-book", p -> msg("Booked, AppointmentID = " + S.book(i(p, "patientId"), i(p, "doctorId"), i(p, "clinicId"),
-                i(p, "operatoryId"), d(p, "date"), t(p, "time"), rq(p, "type"), rq(p, "channel"), s(p, "complaint"))));
+        R.put("appt-book", p -> {
+            int pat = i(p, "patientId"), doc = i(p, "doctorId"), cl = i(p, "clinicId");
+            int id = s(p, "operatoryId") == null          // no room given -> the system picks one
+                    ? S.bookAuto(pat, doc, cl, d(p, "date"), t(p, "time"), rq(p, "type"), rq(p, "channel"), s(p, "complaint"))
+                    : S.book(pat, doc, cl, i(p, "operatoryId"), d(p, "date"), t(p, "time"), rq(p, "type"), rq(p, "channel"), s(p, "complaint"));
+            return msg("Booked, AppointmentID = " + id);
+        });
+        R.put("profile-update", p -> { S.updateProfile(i(p, "id"), s(p, "email"), rq(p, "address")); return msg("Profile updated"); });
         R.put("appt-status", p -> { S.changeStatus(i(p, "id"), rq(p, "status")); return msg("Status changed to " + p.get("status")); });
         R.put("appt-reschedule", p -> { S.reschedule(i(p, "id"), d(p, "date"), t(p, "time")); return msg("Rescheduled"); });
         R.put("appt-complete", p -> msg("Visit completed in one transaction. Receipt: " + S.completeVisit(i(p, "id"), rq(p, "performed"),
                 rq(p, "diagnosis"), s(p, "notes"), s(p, "medicines"), s(p, "followUp"), new BigDecimal(rq(p, "cost")), rq(p, "mode"), rq(p, "payStatus"))));
         R.put("appt-settle", p -> { S.settlePayment(i(p, "id")); return msg("Payment settled"); });
+        R.put("slots", p -> S.freeSlots(i(p, "doctorId"), i(p, "clinicId"), d(p, "date")));
+        R.put("free-rooms", p -> S.freeRooms(i(p, "clinicId"), d(p, "date"), t(p, "time")));
         // reports
         R.put("r-daily", p -> S.dailySchedule(d(p, "date"), oi(p, "clinicId")));
-        R.put("r-history", p -> S.patientHistory(i(p, "patientId")));
-        R.put("r-revenue", p -> S.clinicRevenue(d(p, "from"), d(p, "to")));
-        R.put("r-payments", p -> S.paymentSummary(d(p, "from"), d(p, "to")));
-        R.put("r-workload", p -> S.doctorWorkload(d(p, "from"), d(p, "to")));
+        R.put("r-history", p -> S.patientHistory(i(p, "patientId"), oi(p, "clinicId")));
+        R.put("r-revenue", p -> S.clinicRevenue(d(p, "from"), d(p, "to"), oi(p, "clinicId")));
+        R.put("r-payments", p -> S.paymentSummary(d(p, "from"), d(p, "to"), oi(p, "clinicId")));
+        R.put("r-workload", p -> S.doctorWorkload(d(p, "from"), d(p, "to"), oi(p, "clinicId")));
+
+        // admin management
+        R.put("admins", p -> AUTH.listAdmins());
+        R.put("admin-promote", p -> msg(AUTH.promote(i(p, "employeeId"), rq(p, "password"))));
+        R.put("admin-demote", p -> msg(AUTH.demote(i(p, "userId"), i(p, "actorUserId"), "yes".equalsIgnoreCase(s(p, "deactivate")))));
     }
 
     public static void main(String[] args) throws Exception {
@@ -78,22 +98,86 @@ public final class WebServer {
     private static void api(HttpExchange ex) {
         int code = 200; String body;
         try {
-            Fn fn = R.get(ex.getRequestURI().getPath().substring("/api/".length()));
-            if (fn == null) throw new BusinessException("Unknown endpoint");
+            String path = ex.getRequestURI().getPath().substring("/api/".length());
+            String raw = new String(ex.getRequestBody().readAllBytes(), StandardCharsets.UTF_8);
             Map<String, String> p = new HashMap<>();
-            parse(ex.getRequestURI().getRawQuery(), p);
-            parse(new String(ex.getRequestBody().readAllBytes(), StandardCharsets.UTF_8), p);
+            if (!Set.of("login", "signup", "forgot", "reset", "admin-promote").contains(path)) parse(ex.getRequestURI().getRawQuery(), p);
+            parse(raw, p);
+
+            Object result;
+            if (path.equals("login")) {
+                post(ex);
+                Session s = AUTH.login(rq(p, "username"), rq(p, "password"));
+                setCookie(ex, s.token, false);
+                result = s.toMap();
+            } else if (path.equals("signup")) {
+                post(ex);
+                AUTH.throttleSignup(ex.getRemoteAddress().getAddress().getHostAddress());
+                String pw = rq(p, "password");
+                AuthService.checkPasswordStrength(pw);
+                S.registerPatient(rq(p, "name"), rq(p, "gender"), d(p, "dob"), rq(p, "phone"), s(p, "email"),
+                        rq(p, "address"), s(p, "ecName"), s(p, "ecNumber"), s(p, "history"), PasswordHasher.hash(pw));
+                Session sess = AUTH.login(rq(p, "phone"), pw);      // auto-login after signup
+                setCookie(ex, sess.token, false);
+                result = sess.toMap();
+            } else if (path.equals("forgot")) {
+                post(ex);
+                AUTH.throttleReset(ex.getRemoteAddress().getAddress().getHostAddress());
+                AUTH.requestReset(rq(p, "username"));
+                result = msg("If that account exists, a 6-digit code has been sent. It is valid for 15 minutes.");
+            } else if (path.equals("reset")) {
+                post(ex);
+                AUTH.throttleReset(ex.getRemoteAddress().getAddress().getHostAddress());
+                AUTH.resetPassword(rq(p, "username"), rq(p, "code"), rq(p, "password"));
+                result = msg("Password changed - please log in with your new password");
+            } else if (path.equals("logout")) {
+                post(ex);
+                AUTH.logout(token(ex));
+                setCookie(ex, "", true);
+                result = msg("Logged out");
+            } else if (path.equals("me")) {
+                result = AUTH.require(token(ex)).toMap();
+            } else if (path.equals("public-stats")) {
+                result = S.publicStats();         // public: aggregates only, no session needed
+            } else {
+                Session s = AUTH.require(token(ex));     // 401 if not logged in
+                Policy.check(s, path, p);                // 403 if not allowed; may pin params to the caller
+                Fn fn = R.get(path);
+                if (fn == null) throw new BusinessException("Unknown endpoint");
+                result = fn.run(p);
+            }
             StringBuilder b = new StringBuilder();
-            json(b, norm(fn.run(p)));
+            json(b, norm(result));
             body = b.toString();
         } catch (Exception e) {
-            code = 400;
-            Throwable c = e;
-            String m = c instanceof BusinessException ? c.getMessage() : "Invalid input: " + c.getMessage();
+            code = e instanceof AuthException ? 401 : e instanceof ForbiddenException ? 403 : 400;
+            String m = e instanceof BusinessException ? e.getMessage() : "Invalid input: " + e.getMessage();
             StringBuilder b = new StringBuilder("{\"error\":");
             str(b, m); body = b.append('}').toString();
         }
         try { send(ex, code, "application/json; charset=utf-8", body.getBytes(StandardCharsets.UTF_8)); } catch (Exception ignored) {}
+    }
+
+    private static void post(HttpExchange ex) {
+        if (!"POST".equals(ex.getRequestMethod())) throw new BusinessException("POST required");
+    }
+
+    /** Reads the SID value from the Cookie header(s); null if absent. */
+    private static String token(HttpExchange ex) {
+        List<String> hs = ex.getRequestHeaders().get("Cookie");
+        if (hs == null) return null;
+        for (String h : hs)
+            for (String part : h.split(";")) {
+                String kv = part.trim();
+                if (kv.startsWith("SID=")) return kv.substring(4);
+            }
+        return null;
+    }
+
+    private static void setCookie(HttpExchange ex, String value, boolean clear) {
+        // Add "; Secure" once you serve over HTTPS. Without Max-Age it's a session cookie (gone when browser closes).
+        ex.getResponseHeaders().add("Set-Cookie",
+                "SID=" + value + "; Path=/; HttpOnly; SameSite=Strict" + (clear ? "; Max-Age=0" : ""));
     }
 
     private static void parse(String q, Map<String, String> out) {

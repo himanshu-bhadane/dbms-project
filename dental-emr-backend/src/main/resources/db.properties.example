@@ -1,0 +1,3 @@
+url=jdbc:mysql://localhost:3306/dental_emr?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Kolkata
+user=root
+password=CHANGE_ME

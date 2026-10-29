@@ -1,0 +1,20 @@
+target/
+
+# Credentials
+src/main/resources/db.properties
+.env
+
+# Editor / IDE
+.vscode/
+.idea/
+*.iml
+.classpath
+.project
+.settings/
+
+# OS junk
+.DS_Store
+
+# Test cookie files
+*.txt
+!README.txt

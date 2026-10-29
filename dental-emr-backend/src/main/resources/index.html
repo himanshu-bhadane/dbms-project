@@ -1,85 +1,723 @@
 <!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Dental EMR</title>
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='32' fill='%230d6efd'/%3E%3Cpath fill='%23fff' d='M26 14h12v12h12v12H38v12H26V38H14V26h12z'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,400&family=Public+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='10' fill='%230a4539'/%3E%3Cpath fill='%23f5f1e8' d='M26 14h12v12h12v12H38v12H26V38H14V26h12z'/%3E%3C/svg%3E">
 <style>
-:root{--bg:#ffffff;--card:#ffffff;--ink:#212529;--mut:#6c757d;--acc:#0d6efd;--err:#dc3545;--ok:#198754;--bd:#dee2e6}
-*{box-sizing:border-box}body{margin:0;font:14px/1.45 system-ui,sans-serif;background:var(--bg);color:var(--ink)}
-header{display:flex;align-items:center;gap:12px;padding:12px 22px;background:var(--acc);color:#fff;font-weight:600;font-size:16px}
-header svg{width:34px;height:34px;flex:none}
-nav{display:flex;gap:4px;padding:10px 22px 0;flex-wrap:wrap}
-nav button{border:0;background:none;color:var(--mut);padding:8px 14px;font:inherit;cursor:pointer;border-bottom:2px solid transparent}
-nav button.on{color:var(--acc);border-color:var(--acc);font-weight:600}
-main{padding:14px 22px;display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(460px,1fr))}
-.card{background:var(--card);border:1px solid var(--bd);border-radius:8px;padding:14px;min-width:0}
-.card h3{margin:0 0 2px;font-size:15px}.note{color:var(--mut);font-size:12px;margin-bottom:10px}
-form{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;align-items:end}
-label{font-size:11px;color:var(--mut);display:block}
-input,select{width:100%;padding:6px 8px;border:1px solid var(--bd);border-radius:5px;background:var(--bg);color:var(--ink);font:inherit}
-button.run{background:var(--acc);color:#fff;border:0;border-radius:5px;padding:8px 14px;cursor:pointer;font:inherit}
+:root{--bg:#f5f1e8;--card:#fffdf8;--ink:#1d2a26;--mut:#68716b;--acc:#0f5c4d;--acc2:#0a4539;--gold:#e8c98a;--err:#a63a2b;--ok:#2d6a3e;--bd:#dcd4c3;--tint:#ece5d6;--serif:'Fraunces',Georgia,'Times New Roman',serif}
+*{box-sizing:border-box}
+body{margin:0;font:14px/1.5 'Public Sans',system-ui,sans-serif;background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased}
+h1,h2,h3{font-family:var(--serif);font-weight:600;letter-spacing:-.01em}
+a{color:var(--acc)}
+header{display:flex;align-items:baseline;gap:14px;padding:14px 28px;background:var(--acc2);color:var(--bg)}
+.brand{font-family:var(--serif);font-size:23px;font-weight:600;letter-spacing:-.01em}
+.brand em{font-style:italic;font-weight:400;margin-left:5px;color:var(--gold)}
+.sub{font-size:11px;letter-spacing:.14em;text-transform:uppercase;opacity:.65}
+#who{margin-left:auto;font-size:13px;text-align:right;align-self:center}
+#out{border:1px solid rgba(245,241,232,.45);background:none;color:inherit;border-radius:3px;padding:5px 13px;font:inherit;font-size:13px;cursor:pointer;align-self:center}
+#out:hover{background:rgba(255,255,255,.12)}
+nav{display:flex;gap:2px;padding:12px 28px 0;flex-wrap:wrap;border-bottom:1px solid var(--bd)}
+nav button{border:0;background:none;color:var(--mut);padding:9px 15px;font:inherit;font-weight:500;cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-1px}
+nav button:hover{color:var(--ink)}
+nav button.on{color:var(--acc2);border-color:var(--acc);font-weight:600}
+main{padding:20px 28px;display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(460px,1fr))}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:4px;padding:18px;min-width:0}
+.card h3{margin:0 0 3px;font-size:17px}
+.note{color:var(--mut);font-size:12.5px;margin-bottom:10px}
+form{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;align-items:end}
+label{font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--mut);display:block;margin-bottom:3px}
+input,select{width:100%;padding:7px 9px;border:1px solid var(--bd);border-radius:3px;background:#fff;color:var(--ink);font:inherit}
+input:focus,select:focus{outline:2px solid var(--acc);outline-offset:-1px;border-color:var(--acc)}
+button.run{background:var(--acc);color:#fff;border:0;border-radius:3px;padding:9px 18px;cursor:pointer;font:inherit;font-weight:600}
+button.run:hover{background:var(--acc2)}
+button.run:disabled{background:#b8c4be;cursor:not-allowed}
 .res{margin-top:10px;overflow-x:auto;max-height:340px;overflow-y:auto}
 .err{color:var(--err);font-weight:600}.ok{color:var(--ok);font-weight:600}
-table{border-collapse:collapse;width:100%;font-size:12.5px}th,td{padding:5px 8px;border-bottom:1px solid var(--bd);text-align:left;white-space:nowrap}
-th{position:sticky;top:0;background:var(--card);color:var(--mut)}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th,td{padding:7px 10px;border-bottom:1px solid var(--bd);text-align:left;white-space:nowrap}
+th{position:sticky;top:0;background:var(--card);color:var(--mut);font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;border-bottom:2px solid var(--ink)}
+tr:hover td{background:#faf6ec}
+.login{max-width:380px;margin:40px auto;grid-column:1/-1}
+.login form{grid-template-columns:1fr}
+.wide{grid-column:1/-1}
+.bar{display:flex;gap:12px;align-items:end;flex-wrap:wrap;margin-bottom:12px}
+.bar>div{min-width:150px}
+.stats{display:flex;gap:0;flex-wrap:wrap;margin:0 0 14px;border:1px solid var(--bd);border-radius:4px;width:fit-content;background:#fff}
+.stat{padding:8px 20px;font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--mut);border-right:1px solid var(--bd)}
+.stat:last-child{border-right:0}
+.stat b{display:block;font:600 24px/1.1 var(--serif);letter-spacing:0;text-transform:none;color:var(--ink);font-variant-numeric:lining-nums}
+button.sm{border:1px solid var(--bd);background:#fff;color:var(--ink);border-radius:3px;padding:3px 10px;font:inherit;font-size:12px;font-weight:500;cursor:pointer;margin-right:4px}
+button.sm:hover{border-color:var(--acc);color:var(--acc)}
+button.sm.dng:hover{border-color:var(--err);color:var(--err)}
+.chips{display:flex;gap:7px;flex-wrap:wrap;margin:8px 0}
+.chip{border:1px solid var(--bd);background:#fff;color:var(--ink);border-radius:3px;padding:6px 14px;font:inherit;font-variant-numeric:tabular-nums;cursor:pointer}
+.chip:hover{border-color:var(--acc)}
+.chip.on{background:var(--acc);color:#fff;border-color:var(--acc)}
+.badge{padding:2px 9px;border-radius:3px;font-size:11px;font-weight:600;letter-spacing:.02em}
+.b-Confirmed{background:#e3edf0;color:#1f5266}.b-Checked-In{background:#f5e8c4;color:#7a5a0b}
+.b-Show{background:#d9e8da;color:#1f5a30}.b-No-Show{background:#f1d9d4;color:#8a2e22}.b-Cancelled{background:#e6e2d8;color:#5c5a52}
+.prof{max-width:680px;margin:0 auto}
+.phead{display:flex;align-items:center;gap:18px;padding-bottom:16px;border-bottom:2px solid var(--ink);margin-bottom:6px}
+.avatar{width:64px;height:64px;border-radius:50%;background:var(--acc2);color:var(--gold);display:flex;align-items:center;justify-content:center;font:600 24px var(--serif);flex:none}
+.phead h2{margin:0;font-size:26px}
+.psec{font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--acc);margin:18px 0 4px}
+.pr{display:flex;align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid var(--bd);min-height:44px}
+.pl{width:150px;flex:none;color:var(--mut);font-size:13px}
+.pv{flex:1;min-width:0;word-break:break-word}
+.pv i{color:var(--mut)}
+.pen{border:0;background:none;color:var(--mut);cursor:pointer;padding:5px;border-radius:3px;line-height:0}
+.pen:hover{background:var(--tint);color:var(--acc)}
+.lock{color:var(--mut);line-height:0;padding:5px;cursor:help}
+.pr form{display:flex;flex:1;gap:8px;align-items:center;grid-template-columns:none}
+.pr form input{flex:1}
+.pw{position:relative;display:block}
+.pw input{padding-right:36px}
+.eye{position:absolute;right:4px;top:50%;transform:translateY(-50%);border:0;background:none;color:var(--mut);cursor:pointer;padding:5px;line-height:0;border-radius:3px}
+.eye:hover{color:var(--acc)}
+.landing{grid-column:1/-1;display:grid;grid-template-columns:minmax(0,1.35fr) minmax(300px,380px);gap:36px;max-width:1040px;width:100%;margin:22px auto}
+.landing .login{margin:0;max-width:none;grid-column:auto;align-self:start}
+.hero{background:var(--tint);border-radius:4px;padding:36px 34px}
+.hero h1{margin:0 0 12px;font-size:40px;line-height:1.08;font-weight:600}
+.hero p{margin:0 0 26px;color:#4a544f;font-size:15.5px;max-width:46ch}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:22px;margin-bottom:26px}
+.tile{border-top:2px solid var(--ink);padding-top:8px}
+.tile b{display:block;font:600 40px/1.05 var(--serif);color:var(--acc2);font-variant-numeric:lining-nums}
+.tile span{font-size:12px;color:var(--mut)}
+.cl{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid #cfc6b2;font-size:13px}
+.cl span{color:var(--mut);text-align:right}
+.steps{margin:6px 0 0;padding-left:20px;font-size:13.5px}
+.steps li{margin:5px 0}
+@media(max-width:800px){.landing{grid-template-columns:1fr}.hero h1{font-size:32px}main{padding:14px}header{padding:12px 16px}nav{padding:10px 14px 0}}
 </style></head><body>
-<header><svg viewBox="0 0 64 64" aria-label="Hospital logo"><circle cx="32" cy="32" r="32" fill="#fff"/><path fill="#0d6efd" d="M26 14h12v12h12v12H38v12H26V38H14V26h12z"/></svg>Dental EMR - Appointment Management (JDBC backend demo)</header>
+  <header><span class="brand">Instant<em>Dental</em></span><span class="sub">Appointments</span><span id="who"></span><button id="out" hidden>Log out</button></header>
 <nav id="nav"></nav><main id="main"></main>
 <script>
-const today=new Date().toISOString().slice(0,10), ago=new Date(Date.now()-120*864e5).toISOString().slice(0,10);
-const DEF={date:today,from:ago,to:today,status:'Checked-In',gender:'Male',type:'In-Clinic',channel:'Reception',mode:'Cash',payStatus:'Paid',day:'Monday',available:'yes'};
+const today=new Date(Date.now()-new Date().getTimezoneOffset()*6e4).toISOString().slice(0,10), ago=new Date(Date.now()-120*864e5).toISOString().slice(0,10);
+const DEF={date:today,from:ago,to:today,status:'Checked-In',gender:'Male',type:'In-Clinic',channel:'Reception',mode:'Cash',payStatus:'Paid',day:'Monday',available:'yes',clinicId:''};
 const SEL={status:'Checked-In|No-Show|Cancelled',gender:'Male|Female|Other',type:'In-Clinic|Home Visit|Video Consultation',channel:'Reception|Call Center|Patient Portal',
- mode:'Cash|Card|UPI|Wallet',payStatus:'Paid|Pending',day:'Monday|Tuesday|Wednesday|Thursday|Friday|Saturday',available:'yes|no'};
-const TYPE={dob:'date',date:'date',from:'date',to:'date',time:'time',start:'time',end:'time'};
-// {t:title, ep:endpoint, f:fields, n:note = the backend rule this action demonstrates, auto:run on load}
-const TABS={
-Overview:[
- {t:'Clinic-wise revenue',ep:'r-revenue',f:['from','to'],auto:1,n:'ReportDao: CLINIC LEFT JOIN APPOINTMENT LEFT JOIN PAYMENT, grouped; Paid vs Pending split.'},
- {t:'Payment summary',ep:'r-payments',f:['from','to'],auto:1,n:'GROUP BY PaymentMode, PaymentStatus.'},
- {t:'Doctor workload',ep:'r-workload',f:['from','to'],auto:1,n:'Completed / no-show / cancelled counts + revenue per doctor.'},
- {t:'Clinics',ep:'clinics',f:[],auto:1,n:'ClinicDao.all()'}],
-Patients:[
- {t:'Find patients',ep:'patients',f:['id','phone','name'],auto:1,n:'Search by ID, phone (exact) or name (LIKE). Blank = list all.'},
- {t:'Register patient',ep:'patient-register',f:['name','gender','dob','phone','email','address','ecName','ecNumber','history'],n:'Age is computed from DOB; phone must be 10 digits and unique (pre-check + DB UNIQUE).'},
- {t:'Patient visit history',ep:'r-history',f:['patientId'],n:'APPOINTMENT LEFT JOIN TREATMENT LEFT JOIN PAYMENT, newest first.'}],
-Appointments:[
- {t:'Search appointments',ep:'appt-search',f:['patientId','doctorId','clinicId','date'],auto:1,n:'Any combination of filters, built with bound parameters.'},
- {t:'Book appointment',ep:'appt-book',f:['patientId','doctorId','clinicId','operatoryId','date','time','type','channel','complaint'],n:'Checks roster + IsAvailable, operatory belongs to clinic, no double-booking (doctor/room/patient), row-locks against races.'},
- {t:'Change status',ep:'appt-status',f:['id','status'],n:'Enforced workflow: Confirmed -> Checked-In/No-Show/Cancelled; Checked-In -> Cancelled. Try an illegal jump.'},
- {t:'Complete visit',ep:'appt-complete',f:['id','performed','diagnosis','notes','medicines','followUp','cost','mode','payStatus'],n:'ONE transaction: status=Show + TREATMENT + PAYMENT + receipt. Any failure rolls everything back.'},
- {t:'Reschedule',ep:'appt-reschedule',f:['id','date','time'],n:'Only Confirmed appointments; slot rules re-checked excluding itself.'},
- {t:'Settle pending payment',ep:'appt-settle',f:['id'],n:'Pending -> Paid.'},
- {t:'Daily schedule',ep:'r-daily',f:['date','clinicId'],n:'Report: all appointments on a day, optional clinic. Sample data spans ~Jul-Sep 2026.'}],
-Doctors:[
- {t:'Doctors',ep:'doctors',f:['clinicId'],auto:1,n:'Blank = all; with clinic = doctors rostered there (M:N via DOCTOR_SCHEDULE).'},
- {t:'Doctor roster',ep:'roster',f:['doctorId'],n:'Weekly schedule across clinics, ordered Mon-Sun.'},
- {t:'Add roster slot',ep:'roster-add',f:['doctorId','clinicId','day','start','end'],n:'end > start; rejects overlap with the same doctor\'s other slots that weekday.'},
- {t:'Leave on/off',ep:'leave',f:['scheduleId','available'],n:'Sets IsAvailable; bookings in that slot are then rejected.'}],
-Clinics:[
- {t:'Operatories',ep:'operatories',f:['clinicId'],n:'Rooms of a clinic (1:M).'},
- {t:'Employees',ep:'employees',f:['clinicId'],n:'Staff of a clinic (1:M).'}]
+ mode:'Cash|Card|UPI|Wallet',payStatus:'Paid|Pending',day:'Monday|Tuesday|Wednesday|Thursday|Friday|Saturday',available:'yes|no',deactivate:'no|yes'};
+const TYPE={dob:'date',date:'date',from:'date',to:'date',time:'time',start:'time',end:'time',password:'password'};
+let ME=null;
+
+// t=title, ep=endpoint, f=fields, n=note, auto=1 (always) or [roles] that run on load,
+// h={ROLE:[fields hidden because the server pins them]}, d={field:default override}
+const A={
+ rev:{t:'Clinic-wise revenue',ep:'r-revenue',f:['from','to','clinicId'],auto:1,h:{RECEPTION:['clinicId']},n:'Paid vs Pending per clinic. Reception sees only their own clinic; admin sees all (or filter by clinicId).'},
+ pay:{t:'Payment summary',ep:'r-payments',f:['from','to','clinicId'],auto:1,h:{RECEPTION:['clinicId']},n:'GROUP BY PaymentMode, PaymentStatus.'},
+ wl:{t:'Doctor workload',ep:'r-workload',f:['from','to','clinicId'],auto:1,h:{RECEPTION:['clinicId']},n:'Completed / no-show / cancelled counts + revenue per doctor.'},
+ clinics:{t:'Clinics',ep:'clinics',f:[],auto:1,n:'All clinics.'},
+ find:{t:'Find patients',ep:'patients',f:['id','phone','name'],auto:['RECEPTION','ADMIN','PATIENT'],h:{PATIENT:['id','phone','name'],DOCTOR:['phone','name']},n:'Search by ID, phone (exact) or name (LIKE). Doctors: by ID, only patients they have treated. Patients: always your own record.'},
+ reg:{t:'Register patient',ep:'patient-register',f:['name','gender','dob','phone','email','address','ecName','ecNumber','history'],n:'Age is computed from DOB; phone must be 10 digits and unique.'},
+ hist:{t:'Patient visit history',ep:'r-history',f:['patientId'],auto:['PATIENT'],h:{PATIENT:['patientId']},n:'Appointments with treatment + payment, newest first. Reception sees only visits at their clinic.'},
+ asearch:{t:'Search appointments',ep:'appt-search',f:['patientId','doctorId','clinicId','date'],auto:1,d:{date:''},h:{RECEPTION:['clinicId'],DOCTOR:['doctorId'],PATIENT:['patientId']},n:'Any combination of filters. Results are limited to what your role may see.'},
+ book:{t:'Book appointment',ep:'appt-book',f:['patientId','doctorId','clinicId','operatoryId','date','time','type','channel','complaint'],h:{PATIENT:['patientId','channel']},n:'Doctor must be rostered at that clinic/time; operatory must belong to the clinic; no double-booking.'},
+ status:{t:'Change status',ep:'appt-status',f:['id','status'],n:'Confirmed -> Checked-In / No-Show / Cancelled; Checked-In -> Cancelled.'},
+ complete:{t:'Complete visit',ep:'appt-complete',f:['id','performed','diagnosis','notes','medicines','followUp','cost','mode','payStatus'],n:'ONE transaction: status=Show + TREATMENT + PAYMENT + receipt. Patient must be Checked-In first.'},
+ resched:{t:'Reschedule',ep:'appt-reschedule',f:['id','date','time'],n:'Only Confirmed appointments.'},
+ settle:{t:'Settle pending payment',ep:'appt-settle',f:['id'],n:'Pending -> Paid.'},
+ daily:{t:'Daily schedule',ep:'r-daily',f:['date','clinicId'],h:{RECEPTION:['clinicId']},n:'All appointments on a day. Sample data spans ~Jul-Sep 2026.'},
+ docs:{t:'Doctors',ep:'doctors',f:['clinicId'],auto:1,n:'Blank = all; with clinic = doctors rostered there.'},
+ roster:{t:'Doctor roster',ep:'roster',f:['doctorId'],auto:['DOCTOR'],h:{DOCTOR:['doctorId']},n:'Weekly schedule across clinics.'},
+ radd:{t:'Add roster slot',ep:'roster-add',f:['doctorId','clinicId','day','start','end'],n:'end > start; no overlap with the same doctor\'s other slots that weekday.'},
+ leave:{t:'Leave on/off',ep:'leave',f:['scheduleId','available'],n:'Sets IsAvailable; bookings in that slot are then rejected.'},
+ ops:{t:'Operatories',ep:'operatories',f:['clinicId'],h:{RECEPTION:['clinicId']},n:'Rooms of a clinic.'},
+ emps:{t:'Employees',ep:'employees',f:['clinicId'],n:'Staff of a clinic (admin only: includes salaries).'},
+ adms:{t:'Current admins',ep:'admins',f:[],auto:1,n:'Active admins. The ID column is the UserID used for demotion.'},
+ promote:{t:'Promote employee to admin',ep:'admin-promote',f:['employeeId','password'],n:'Find the EmployeeID in the Employees card. Sets the initial password (8+ chars, letter + digit). Their live sessions are ended, so they log in again as admin.'},
+ demote:{t:'Demote admin',ep:'admin-demote',f:['userId','deactivate'],n:'Removes admin rights only: the person keeps their login with Reception access to their own clinic. Set deactivate=yes only to also disable the account (e.g. retirement). Cannot demote yourself or the last admin.'},
+//  upd:{t:'Update my contact details',ep:'profile-update',f:['email','address'],n:'Address is required. Leave email empty to remove it. Your phone number is your login, so ask reception to change it.'}
 };
-const $=(h)=>{const d=document.createElement('div');d.innerHTML=h;return d.firstElementChild};
+const RECEPTION_VIEW={Today:viewToday,'Book appointment':viewBook,Overview:['rev','pay','wl'],Patients:['find','reg','hist'],Appointments:['asearch','status','resched','settle'],Doctors:['docs','roster','radd','leave'],Clinic:['ops']};
+const VIEW={
+ RECEPTION:RECEPTION_VIEW,
+ ADMIN:{...RECEPTION_VIEW,Clinics:['clinics','ops','emps'],Admins:['adms','emps','promote','demote']},
+ DOCTOR:{'My day':viewDay,Appointments:['asearch'],Patients:['find','hist'],'My roster':['roster','leave']},
+ PATIENT:{'My appointments':viewMine,'Book appointment':viewPBook,'My history':['hist'],'My profile':viewProfile,Doctors:['docs','roster']}
+};
+
+const $=h=>{const d=document.createElement('div');d.innerHTML=h;return d.firstElementChild};
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-function field(n){const v=DEF[n]??'';
- if(SEL[n])return `<div><label>${n}</label><select name="${n}">${SEL[n].split('|').map(o=>`<option ${o==v?'selected':''}>${o}</option>`).join('')}</select></div>`;
- return `<div><label>${n}</label><input name="${n}" type="${TYPE[n]||'text'}" value="${v}"></div>`}
+async function api(ep,data){
+ try{
+  const r=await fetch('/api/'+ep,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams(data||{})});
+  const j=await r.json();
+  if(r.status===401){showLogin('Session expired - please log in again');return{error:'Session expired',expired:true}}
+  return j
+ }catch(e){return{error:'cannot reach backend: '+e.message}}}
+const nav=document.getElementById('nav'), main=document.getElementById('main'), who=document.getElementById('who'), outBtn=document.getElementById('out');
+
+const EYE='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg>';
+const EYEOFF='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.9 10.9 0 0 1 12 20C5 20 1 12 1 12a18.5 18.5 0 0 1 5.06-5.94M9.9 4.24A10.9 10.9 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19M14.12 14.12a3 3 0 1 1-4.24-4.24"/><path d="M1 1l22 22"/></svg>';
+function eyeify(){
+ document.querySelectorAll('input[type=password]:not([data-eye])').forEach(i=>{
+  i.dataset.eye=1;
+  const w=document.createElement('span');w.className='pw';
+  i.parentNode.insertBefore(w,i);w.appendChild(i);
+  const b=document.createElement('button');b.type='button';b.className='eye';
+  b.title='Show password';b.setAttribute('aria-label','Show password');b.innerHTML=EYE;
+  b.onmousedown=e=>e.preventDefault();                 // keep focus in the input
+  b.onclick=()=>{const show=i.type==='password';i.type=show?'text':'password';
+   b.innerHTML=show?EYEOFF:EYE;b.title=b.ariaLabel=show?'Hide password':'Show password'};
+  w.appendChild(b)})}
+new MutationObserver(eyeify).observe(main,{childList:true,subtree:true});
+function countUp(el,to){const t0=performance.now(),d=900;
+ (function f(t){const p=Math.min(1,(t-t0)/d);
+  el.textContent=Math.round(to*(1-Math.pow(1-p,3))).toLocaleString('en-IN');
+  if(p<1)requestAnimationFrame(f)})(t0)}
+function chipRow(el,items,pick){el.innerHTML='';items.forEach(([label,val])=>{
+ const b=document.createElement('button');b.type='button';b.className='chip';b.textContent=label;
+ b.onclick=()=>{el.querySelectorAll('.chip').forEach(x=>x.classList.remove('on'));b.classList.add('on');pick(val)};
+ el.appendChild(b)})}
+
+function opts(n){
+ if(n==='status'&&ME.role==='DOCTOR')return 'Checked-In|No-Show';
+ if(n==='status'&&ME.role==='PATIENT')return 'Cancelled';
+ return SEL[n]}
+ function field(n,a){
+ const v=(a.d&&n in a.d)?a.d[n]:(DEF[n]??''), o=opts(n);
+ if(o)return `<div><label>${n}</label><select name="${n}">${o.split('|').map(x=>`<option ${x==v?'selected':''}>${x}</option>`).join('')}</select></div>`;
+ return `<div><label>${n}</label><input name="${n}" type="${TYPE[n]||'text'}" value="${esc(v)}"${n==='password'?' autocomplete="new-password"':''}></div>`}
+
 async function run(a,form,out){
  out.innerHTML='<span class="note">running...</span>';
- try{const r=await fetch('/api/'+a.ep,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams(new FormData(form))});
+ try{
+  const r=await fetch('/api/'+a.ep,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams(new FormData(form))});
   const j=await r.json();
+  if(r.status===401){showLogin('Session expired - please log in again');return}
   if(j.error)out.innerHTML=`<div class="err">✗ ${esc(j.error)}</div>`;
   else if(j.message)out.innerHTML=`<div class="ok">✓ ${esc(j.message)}</div>`;
   else if(!j.rows.length)out.innerHTML='<span class="note">(no rows)</span>';
   else out.innerHTML=`<table><tr>${j.cols.map(c=>`<th>${esc(c)}</th>`).join('')}</tr>${j.rows.map(r=>`<tr>${r.map(c=>`<td>${esc(c)}</td>`).join('')}</tr>`).join('')}</table><div class="note">${j.rows.length} row(s)</div>`;
  }catch(e){out.innerHTML=`<div class="err">✗ cannot reach backend: ${esc(e.message)}</div>`}}
-function show(name){
+
+ function show(name){
  document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.textContent==name));
- const m=document.getElementById('main');m.innerHTML='';
- TABS[name].forEach(a=>{
-  const c=$(`<div class="card"><h3>${a.t}</h3><div class="note">${a.n}</div><form>${a.f.map(field).join('')}<div><button class="run" type="submit">Run</button></div></form><div class="res"></div></div>`);
+ main.innerHTML='';
+ const v=VIEW[ME.role][name];
+ if(typeof v==='function'){v();return}
+ v.map(k=>A[k]).forEach(a=>{
+  const hide=(a.h&&a.h[ME.role])||[];
+  const c=$(`<div class="card"><h3>${a.t}</h3><div class="note">${a.n}</div><form>${a.f.filter(n=>!hide.includes(n)).map(n=>field(n,a)).join('')}<div><button class="run" type="submit">Run</button></div></form><div class="res"></div></div>`);
   const f=c.querySelector('form'),o=c.querySelector('.res');
-  f.onsubmit=e=>{e.preventDefault();run(a,f,o)};m.appendChild(c);if(a.auto)run(a,f,o)})}
-const nav=document.getElementById('nav');
-Object.keys(TABS).forEach(k=>{const b=document.createElement('button');b.textContent=k;b.onclick=()=>show(k);nav.appendChild(b)});
-show('Overview');
+  f.onsubmit=e=>{e.preventDefault();run(a,f,o)};main.appendChild(c);
+  if(a.auto===1||(Array.isArray(a.auto)&&a.auto.includes(ME.role)))run(a,f,o)})}
+
+// ---------------- reception: Today ----------------
+function viewToday(){
+ const admin=ME.role==='ADMIN';
+ const c=$(`<div class="card wide"><h3>Schedule</h3><div class="note">One-click Check-in / No-show / Cancel. Buttons appear only where the status workflow allows them; the server enforces it too.</div>
+  <div class="bar"><div><label>date</label><input type="date" id="td" value="${today}"></div>
+  ${admin?'<div><label>clinic</label><select id="tc"><option value="">All clinics</option></select></div>':''}
+  <div><button class="run" id="tr" type="button">Refresh</button></div></div>
+  <div class="stats" id="ts"></div><div class="res" id="tt" style="max-height:none"></div></div>`);
+ main.appendChild(c);
+ const td=c.querySelector('#td'),tc=c.querySelector('#tc'),ts=c.querySelector('#ts'),tt=c.querySelector('#tt');
+ async function load(){
+  tt.innerHTML='<span class="note">loading...</span>';
+  const q={date:td.value};if(tc&&tc.value)q.clinicId=tc.value;
+  const j=await api('r-daily',q);
+  if(j.expired)return;
+  if(j.error){tt.innerHTML=`<div class="err">✗ ${esc(j.error)}</div>`;ts.innerHTML='';return}
+  const I=n=>j.cols.indexOf(n), cnt={};
+  j.rows.forEach(r=>{const s=r[I('Status')];cnt[s]=(cnt[s]||0)+1});
+  ts.innerHTML=`<div class="stat"><b>${j.rows.length}</b>total</div>`+
+   ['Confirmed','Checked-In','Show','No-Show','Cancelled'].map(s=>`<div class="stat"><b>${cnt[s]||0}</b>${s}</div>`).join('');
+  if(!j.rows.length){tt.innerHTML='<span class="note">(no appointments on this date)</span>';return}
+  const cols=['ID','Time','Patient','Doctor',...(admin&&!tc.value?['Clinic']:[]),'Room','Type','Status','Complaint'];
+  tt.innerHTML=`<table><tr>${cols.map(x=>`<th>${x}</th>`).join('')}<th>Actions</th></tr>${j.rows.map(r=>{
+   const st=r[I('Status')], id=r[I('ID')];
+   const acts=st==='Confirmed'?[['Check-in','Checked-In'],['No-show','No-Show'],['Cancel','Cancelled']]:st==='Checked-In'?[['Cancel','Cancelled']]:[];
+   return `<tr>${cols.map(cn=>{let v=r[I(cn)];
+     if(cn==='Status')return `<td><span class="badge b-${esc(v)}">${esc(v)}</span></td>`;
+     if(cn==='Time')v=String(v).slice(0,5);
+     return `<td>${esc(v)}</td>`}).join('')}<td>${acts.map(([l,s])=>`<button class="sm${s==='Checked-In'?'':' dng'}" data-id="${esc(id)}" data-st="${s}">${l}</button>`).join('')||'<span class="note">-</span>'}</td></tr>`}).join('')}</table>`;
+  tt.querySelectorAll('button.sm').forEach(b=>b.onclick=async()=>{
+   if(b.dataset.st!=='Checked-In'&&!confirm(`Mark appointment ${b.dataset.id} as ${b.dataset.st}?`))return;
+   b.disabled=true;
+   const r=await api('appt-status',{id:b.dataset.id,status:b.dataset.st});
+   if(r.expired)return;
+   if(r.error)alert(r.error);
+   load()})}
+ c.querySelector('#tr').onclick=load;td.onchange=load;if(tc)tc.onchange=load;
+ (async()=>{
+  if(tc){const cl=await api('clinics');(cl.rows||[]).forEach(r=>tc.add(new Option(r[1],r[0])))}
+  load()})()}
+
+// ---------------- reception: guided booking ----------------
+function viewBook(){
+ const admin=ME.role==='ADMIN', n=k=>admin?k+1:k;
+ const opt=a=>a.split('|').map(x=>`<option>${x}</option>`).join('');
+ const c=$(`<div class="card wide"><h3>Book appointment</h3>
+  <div class="note">Guided: only free times and free rooms are offered. The server re-checks every rule when you press Book.</div>
+  <div class="bar"><div><label>1. patient phone</label><input id="bp" inputmode="numeric" maxlength="10" placeholder="10 digits"></div>
+   <div><button class="run" id="bf" type="button">Find patient</button></div><div id="bpm"></div></div>
+  <div class="bar">${admin?'<div><label>2. clinic</label><select id="bc"></select></div>':''}
+   <div><label>${n(2)}. doctor</label><select id="bd"></select></div>
+   <div><label>${n(3)}. date</label><input type="date" id="bdt" value="${today}" min="${today}"></div></div>
+  <div class="note" style="margin:0">${n(4)}. free times</div><div class="chips" id="bs"></div>
+  <div class="note" style="margin:8px 0 0">${n(5)}. free rooms at that time</div><div class="chips" id="br"></div>
+  <div class="bar"><div><label>type</label><select id="bty">${opt(SEL.type)}</select></div>
+   <div><label>channel</label><select id="bch">${opt('Reception|Call Center')}</select></div>
+   <div style="flex:1;min-width:220px"><label>chief complaint</label><input id="bcm"></div>
+   <div><button class="run" id="bb" type="button" disabled>Book</button></div></div>
+  <div class="res" id="bm"></div></div>`);
+ main.appendChild(c);
+ const q=s=>c.querySelector(s),bp=q('#bp'),bpm=q('#bpm'),bc=q('#bc'),bd=q('#bd'),bdt=q('#bdt'),bs=q('#bs'),br=q('#br'),bb=q('#bb'),bm=q('#bm');
+ let pid=null,time=null,room=null;
+ const cid=()=>admin?bc.value:String(ME.clinicId);
+ const ready=()=>{bb.disabled=!(pid&&time&&room)};
+ const hint=(el,t)=>{el.innerHTML=`<span class="note">${t}</span>`};
+ const chips=(el,items,pick)=>{el.innerHTML='';items.forEach(([label,val])=>{
+  const b=document.createElement('button');b.type='button';b.className='chip';b.textContent=label;
+  b.onclick=()=>{el.querySelectorAll('.chip').forEach(x=>x.classList.remove('on'));b.classList.add('on');pick(val)};
+  el.appendChild(b)})};
+
+ q('#bf').onclick=async()=>{
+  pid=null;ready();
+  const ph=bp.value.trim();
+  if(!/^\d{10}$/.test(ph)){bpm.innerHTML='<span class="err">✗ enter a 10-digit phone number</span>';return}
+  const j=await api('patients',{phone:ph});
+  if(j.expired)return;
+  if(j.error){bpm.innerHTML=`<span class="err">✗ ${esc(j.error)}</span>`;return}
+  if(!j.rows.length){bpm.innerHTML='<span class="err">✗ not registered</span> <button class="sm" type="button" id="go">Register new patient</button>';q('#go').onclick=()=>show('Patients');return}
+  const I=k=>j.cols.indexOf(k);
+  pid=j.rows[0][I('id')];
+  bpm.innerHTML=`<span class="ok">✓ ${esc(j.rows[0][I('name')])}</span> <span class="note">ID ${esc(pid)} · age ${esc(j.rows[0][I('age')])}</span>`;
+  ready()};
+
+ async function loadDocs(){
+  bd.innerHTML='<option value="">- choose doctor -</option>';
+  const j=await api('doctors',{clinicId:cid()});
+  if(j.expired)return;
+  (j.rows||[]).forEach(r=>bd.add(new Option(`${r[1]} (${r[2]})`,r[0])));
+  loadSlots()}
+
+ async function loadSlots(){
+  time=null;room=null;ready();hint(br,'choose a time');
+  if(!bd.value||!bdt.value){hint(bs,'choose a doctor and date');return}
+  hint(bs,'loading...');
+  const j=await api('slots',{doctorId:bd.value,clinicId:cid(),date:bdt.value});
+  if(j.expired)return;
+  if(j.error){bs.innerHTML=`<span class="err">✗ ${esc(j.error)}</span>`;return}
+  if(!j.rows.length){hint(bs,'No free times: this doctor is not rostered here on that weekday, is on leave, or is fully booked.');return}
+  chips(bs,j.rows.map(r=>[r[0],r[0]]),t=>{time=t;room=null;ready();loadRooms()})}
+
+ async function loadRooms(){
+  hint(br,'loading...');
+  const j=await api('free-rooms',{clinicId:cid(),date:bdt.value,time});
+  if(j.expired)return;
+  if(j.error){br.innerHTML=`<span class="err">✗ ${esc(j.error)}</span>`;return}
+  if(!j.rows.length){hint(br,'No free room at this time.');return}
+  chips(br,j.rows.map(r=>[`${r[0]} · ${r[1]}`,r[0]]),r=>{room=r;ready()})}
+
+ bb.onclick=async()=>{
+  bb.disabled=true;bm.innerHTML='<span class="note">booking...</span>';
+  const j=await api('appt-book',{patientId:pid,doctorId:bd.value,clinicId:cid(),operatoryId:room,date:bdt.value,time,
+   type:q('#bty').value,channel:q('#bch').value,complaint:q('#bcm').value});
+  if(j.expired)return;
+  if(j.error){bm.innerHTML=`<div class="err">✗ ${esc(j.error)}</div>`;ready();return}
+  bm.innerHTML=`<div class="ok">✓ ${esc(j.message)}</div>`;
+  pid=null;bp.value='';bpm.innerHTML='';q('#bcm').value='';
+  loadSlots()};
+
+ bd.onchange=loadSlots;bdt.onchange=loadSlots;if(bc)bc.onchange=loadDocs;
+ (async()=>{
+  if(admin){const cl=await api('clinics');(cl.rows||[]).forEach(r=>bc.add(new Option(r[1],r[0])))}
+  loadDocs()})()}
+
+// ---------------- doctor: My day ----------------
+function viewDay(){
+ const c=$(`<div class="card wide"><h3>My day</h3>
+  <div class="note">Check in or mark no-show, open the patient's record, and complete the visit (treatment + payment in one transaction). Cancellations are handled by reception.</div>
+  <div class="bar"><div><button class="sm" id="dp" type="button">◀ prev</button></div>
+   <div><label>date</label><input type="date" id="dd" value="${today}"></div>
+   <div><button class="sm" id="dn" type="button">next ▶</button></div>
+   <div><button class="run" id="dr" type="button">Refresh</button></div></div>
+  <div class="stats" id="ds"></div><div class="res" id="dt" style="max-height:none"></div></div>`);
+ const pn=$('<div class="card wide" hidden></div>');
+ main.appendChild(c);main.appendChild(pn);
+ const dd=c.querySelector('#dd'),ds=c.querySelector('#ds'),dt=c.querySelector('#dt');
+ const tbl=j=>!j.rows.length?'<span class="note">(no rows)</span>':
+  `<table><tr>${j.cols.map(x=>`<th>${esc(x)}</th>`).join('')}</tr>${j.rows.map(r=>`<tr>${r.map(v=>`<td>${esc(v)}</td>`).join('')}</tr>`).join('')}</table>`;
+
+ async function load(keep){
+  if(!keep)pn.hidden=true;
+  dt.innerHTML='<span class="note">loading...</span>';
+  const j=await api('appt-search',{date:dd.value});      // server pins doctorId to you
+  if(j.expired)return;
+  if(j.error){dt.innerHTML=`<div class="err">✗ ${esc(j.error)}</div>`;ds.innerHTML='';return}
+  const I=n=>j.cols.indexOf(n), cnt={};
+  j.rows.forEach(r=>{const s=r[I('Status')];cnt[s]=(cnt[s]||0)+1});
+  ds.innerHTML=`<div class="stat"><b>${j.rows.length}</b>total</div>`+
+   ['Confirmed','Checked-In','Show','No-Show','Cancelled'].map(s=>`<div class="stat"><b>${cnt[s]||0}</b>${s}</div>`).join('');
+  if(!j.rows.length){dt.innerHTML='<span class="note">(no appointments on this date)</span>';return}
+  const cols=['Time','Patient','Clinic','Room','Type','Status','Complaint'];
+  dt.innerHTML=`<table><tr>${cols.map(x=>`<th>${x}</th>`).join('')}<th>Actions</th></tr>${j.rows.map(r=>{
+   const st=r[I('Status')],id=r[I('ID')],pid=r[I('PatientID')],pt=r[I('Patient')];
+   const acts=st==='Confirmed'?[['Check-in','Checked-In'],['No-show','No-Show']]:st==='Checked-In'?[['Complete visit','complete']]:[];
+   acts.push(['Patient','patient']);
+   return `<tr>${cols.map(cn=>{let v=r[I(cn)];
+     if(cn==='Status')return `<td><span class="badge b-${esc(v)}">${esc(v)}</span></td>`;
+     if(cn==='Time')v=String(v).slice(0,5);
+     return `<td>${esc(v)}</td>`}).join('')}<td>${acts.map(([l,a])=>
+      `<button class="sm${a==='No-Show'?' dng':''}" data-a="${a}" data-id="${esc(id)}" data-pid="${esc(pid)}" data-pt="${esc(pt)}">${l}</button>`).join('')}</td></tr>`}).join('')}</table>`;
+  dt.querySelectorAll('button.sm').forEach(b=>b.onclick=()=>act(b.dataset))}
+
+ async function act(d){
+  if(d.a==='patient')return showPatient(d.pid,d.pt);
+  if(d.a==='complete')return showComplete(d.id,d.pt);
+  if(d.a==='No-Show'&&!confirm(`Mark ${d.pt} as No-Show?`))return;
+  const r=await api('appt-status',{id:d.id,status:d.a});
+  if(r.expired)return;
+  if(r.error)alert(r.error);
+  load()}
+
+ async function showPatient(pid,name){
+  pn.hidden=false;pn.innerHTML='<span class="note">loading...</span>';
+  const [p,h]=await Promise.all([api('patients',{id:pid}),api('r-history',{patientId:pid})]);
+  if(p.expired||h.expired)return;
+  if(p.error||!p.rows.length){pn.innerHTML=`<div class="err">✗ ${esc(p.error||'Patient not found')}</div>`;return}
+  const I=n=>p.cols.indexOf(n),r=p.rows[0];
+  pn.innerHTML=`<h3>${esc(r[I('name')])}</h3>
+   <div class="note">${esc(r[I('gender')])} · age ${esc(r[I('age')])} · patient ID ${esc(r[I('id')])} · ${esc(r[I('phone')])}</div>
+   <div style="margin:6px 0"><b>Medical history / allergies:</b> <span style="color:var(--err);font-weight:600">${esc(r[I('history')])}</span></div>
+   <div class="note">Emergency contact: ${esc(r[I('ecName')])} · ${esc(r[I('ecNumber')])}</div>
+   <h3 style="font-size:13px">Visit history</h3>
+   <div class="res">${h.error?`<div class="err">✗ ${esc(h.error)}</div>`:tbl(h)}</div>
+   <p><button class="sm" id="pc" type="button">Close</button></p>`;
+  pn.querySelector('#pc').onclick=()=>{pn.hidden=true};
+  pn.scrollIntoView({behavior:'smooth'})}
+
+ function showComplete(id,name){
+  pn.hidden=false;
+  pn.innerHTML=`<h3>Complete visit · ${esc(name)} <span class="note">(appointment ${esc(id)})</span></h3>
+   <div class="note">ONE transaction: status → Show, treatment record, payment + receipt. If anything fails nothing is saved.</div>
+   <form id="cf">${['performed','diagnosis','notes','medicines','followUp','cost','mode','payStatus'].map(n=>field(n,{})).join('')}
+    <div><button class="run" type="submit">Complete visit</button> <button class="sm" type="button" id="cx">Close</button></div></form>
+   <div class="res" id="cm"></div>`;
+  const f=pn.querySelector('#cf'),m=pn.querySelector('#cm');
+  f.performed.required=f.diagnosis.required=f.cost.required=true;
+  pn.querySelector('#cx').onclick=()=>{pn.hidden=true};
+  f.onsubmit=async e=>{e.preventDefault();
+   m.innerHTML='<span class="note">saving...</span>';
+   const j=await api('appt-complete',{id,...Object.fromEntries(new FormData(f))});
+   if(j.expired)return;
+   if(j.error){m.innerHTML=`<div class="err">✗ ${esc(j.error)}</div>`;return}
+   m.innerHTML=`<div class="ok">✓ ${esc(j.message)}</div>`;
+   f.querySelectorAll('input,select,button.run').forEach(x=>x.disabled=true);
+   load(true)};                       // refresh the table but keep this message visible
+  pn.scrollIntoView({behavior:'smooth'});f.performed.focus()}
+
+ const shift=n=>{
+  if(!dd.value)return;
+  const d=new Date(dd.value+'T00:00:00');d.setDate(d.getDate()+n);
+  dd.value=new Date(d-d.getTimezoneOffset()*6e4).toISOString().slice(0,10);load()};
+ c.querySelector('#dp').onclick=()=>shift(-1);
+ c.querySelector('#dn').onclick=()=>shift(1);
+ c.querySelector('#dr').onclick=()=>load();
+ dd.onchange=()=>load();
+ load()}
+
+// ---------------- patient: My appointments ----------------
+function viewMine(){
+ const c=$(`<div class="card wide"><h3>My appointments</h3>
+  <div class="note">Confirmed appointments can be rescheduled or cancelled here. Once you are checked in, please speak to reception.</div>
+  <div class="bar"><div><button class="run" id="mr" type="button">Refresh</button></div></div>
+  <div class="stats" id="ms"></div><div class="res" id="mt" style="max-height:none"></div></div>`);
+ const rp=$('<div class="card wide" hidden></div>');
+ main.appendChild(c);main.appendChild(rp);
+ const ms=c.querySelector('#ms'),mt=c.querySelector('#mt');
+ const cols=['ID','Date','Time','Doctor','Clinic','Type','Status','Complaint'];
+
+ async function load(keep){
+  if(!keep)rp.hidden=true;
+  mt.innerHTML='<span class="note">loading...</span>';
+  const j=await api('appt-search',{});                    // server pins patientId to you
+  if(j.expired)return;
+  if(j.error){mt.innerHTML=`<div class="err">✗ ${esc(j.error)}</div>`;ms.innerHTML='';return}
+  const I=n=>j.cols.indexOf(n),up=[],past=[];
+  j.rows.forEach(r=>(r[I('Date')]>=today&&['Confirmed','Checked-In'].includes(r[I('Status')])?up:past).push(r));
+  past.reverse();                                         // newest first
+  ms.innerHTML=`<div class="stat"><b>${up.length}</b>upcoming</div><div class="stat"><b>${past.length}</b>past / closed</div>`;
+  const tb=(rows,acts)=>!rows.length?'<span class="note">(none)</span>':
+   `<table><tr>${cols.map(x=>`<th>${x}</th>`).join('')}${acts?'<th>Actions</th>':''}</tr>${rows.map(r=>{
+    const st=r[I('Status')];
+    const da=`data-id="${esc(r[I('ID')])}" data-did="${esc(r[I('DoctorID')])}" data-cid="${esc(r[I('ClinicID')])}" data-dt="${esc(r[I('Date')])}" data-tm="${esc(String(r[I('Time')]).slice(0,5))}" data-doc="${esc(r[I('Doctor')])}"`;
+    const btns=!acts?'':'<td>'+(st==='Confirmed'?`<button class="sm" data-a="resched" ${da}>Reschedule</button><button class="sm dng" data-a="cancel" ${da}>Cancel</button>`:'<span class="note">-</span>')+'</td>';
+    return `<tr>${cols.map(cn=>{let v=r[I(cn)];
+      if(cn==='Status')return `<td><span class="badge b-${esc(v)}">${esc(v)}</span></td>`;
+      if(cn==='Time')v=String(v).slice(0,5);
+      return `<td>${esc(v)}</td>`}).join('')}${btns}</tr>`}).join('')}</table>`;
+  mt.innerHTML=`<h3 style="font-size:13px">Upcoming</h3>${tb(up,true)}<h3 style="font-size:13px;margin-top:14px">Past and closed</h3>${tb(past,false)}`;
+  mt.querySelectorAll('button.sm').forEach(b=>b.onclick=()=>b.dataset.a==='cancel'?cancel(b.dataset):resched(b.dataset))}
+
+ async function cancel(d){
+  if(!confirm(`Cancel your appointment with ${d.doc} on ${d.dt} at ${d.tm}?`))return;
+  const r=await api('appt-status',{id:d.id,status:'Cancelled'});
+  if(r.expired)return;
+  if(r.error)alert(r.error);
+  load()}
+
+ function resched(d){
+  rp.hidden=false;
+  rp.innerHTML=`<h3>Reschedule appointment ${esc(d.id)}</h3>
+   <div class="note">Currently ${esc(d.dt)} at ${esc(d.tm)} with ${esc(d.doc)}. Pick a new date, then a free time.</div>
+   <div class="bar"><div><label>new date</label><input type="date" id="rd" value="${today}" min="${today}"></div></div>
+   <div class="chips" id="rs"></div>
+   <div class="bar"><div><button class="run" id="rb" type="button" disabled>Reschedule</button> <button class="sm" id="rx" type="button">Close</button></div></div>
+   <div class="res" id="rm"></div>`;
+  const rd=rp.querySelector('#rd'),rs=rp.querySelector('#rs'),rb=rp.querySelector('#rb'),rm=rp.querySelector('#rm');
+  let time=null;
+  rp.querySelector('#rx').onclick=()=>{rp.hidden=true};
+  async function slots(){
+   time=null;rb.disabled=true;rs.innerHTML='<span class="note">loading...</span>';
+   if(!rd.value)return;
+   const j=await api('slots',{doctorId:d.did,clinicId:d.cid,date:rd.value});
+   if(j.expired)return;
+   if(j.error){rs.innerHTML=`<span class="err">✗ ${esc(j.error)}</span>`;return}
+   if(!j.rows.length){rs.innerHTML='<span class="note">No free times on that date. Try another day.</span>';return}
+   chipRow(rs,j.rows.map(r=>[r[0],r[0]]),t=>{time=t;rb.disabled=false})}
+  rd.onchange=slots;
+  rb.onclick=async()=>{
+   rb.disabled=true;rm.innerHTML='<span class="note">saving...</span>';
+   const j=await api('appt-reschedule',{id:d.id,date:rd.value,time});
+   if(j.expired)return;
+   if(j.error){rm.innerHTML=`<div class="err">✗ ${esc(j.error)}</div>`;rb.disabled=false;return}
+   rm.innerHTML=`<div class="ok">✓ ${esc(j.message)}</div>`;
+   load(true)};
+  slots();rp.scrollIntoView({behavior:'smooth'})}
+
+ c.querySelector('#mr').onclick=()=>load();
+ load()}
+
+// ---------------- patient: self-service booking ----------------
+function viewPBook(){
+ const opt=a=>a.split('|').map(x=>`<option>${x}</option>`).join('');
+ const c=$(`<div class="card wide"><h3>Book an appointment</h3>
+  <div class="note">Choose a clinic, doctor and date. Only free times are shown, and a room is assigned for you automatically.</div>
+  <div class="bar"><div><label>1. clinic</label><select id="qc"></select></div>
+   <div><label>2. doctor</label><select id="qd"></select></div>
+   <div><label>3. date</label><input type="date" id="qdt" value="${today}" min="${today}"></div></div>
+  <div class="note" style="margin:0">4. free times</div><div class="chips" id="qs"></div>
+  <div class="bar"><div><label>type</label><select id="qty">${opt(SEL.type)}</select></div>
+   <div style="flex:1;min-width:220px"><label>reason for visit</label><input id="qcm"></div>
+   <div><button class="run" id="qb" type="button" disabled>Book</button></div></div>
+  <div class="res" id="qm"></div></div>`);
+ main.appendChild(c);
+ const q=s=>c.querySelector(s),qc=q('#qc'),qd=q('#qd'),qdt=q('#qdt'),qs=q('#qs'),qb=q('#qb'),qm=q('#qm');
+ let time=null;
+ const hint=t=>{qs.innerHTML=`<span class="note">${t}</span>`};
+
+ async function loadDocs(){
+  qd.innerHTML='<option value="">- choose doctor -</option>';
+  const j=await api('doctors',{clinicId:qc.value});
+  if(j.expired)return;
+  (j.rows||[]).forEach(r=>qd.add(new Option(`${r[1]} (${r[2]})`,r[0])));
+  loadSlots()}
+
+ async function loadSlots(){
+  time=null;qb.disabled=true;
+  if(!qd.value||!qdt.value){hint('choose a doctor and date');return}
+  hint('loading...');
+  const j=await api('slots',{doctorId:qd.value,clinicId:qc.value,date:qdt.value});
+  if(j.expired)return;
+  if(j.error){qs.innerHTML=`<span class="err">✗ ${esc(j.error)}</span>`;return}
+  if(!j.rows.length){hint('No free times: this doctor does not work at this clinic on that weekday, is on leave, or is fully booked.');return}
+  chipRow(qs,j.rows.map(r=>[r[0],r[0]]),t=>{time=t;qb.disabled=false})}
+
+ qb.onclick=async()=>{
+  qb.disabled=true;qm.innerHTML='<span class="note">booking...</span>';
+  const j=await api('appt-book',{doctorId:qd.value,clinicId:qc.value,date:qdt.value,time,type:q('#qty').value,complaint:q('#qcm').value});
+  if(j.expired)return;
+  if(j.error){qm.innerHTML=`<div class="err">✗ ${esc(j.error)}</div>`;qb.disabled=false;return}
+  qm.innerHTML=`<div class="ok">✓ ${esc(j.message)} - see it under <b>My appointments</b>.</div>`;
+  q('#qcm').value='';loadSlots()};
+
+ qc.onchange=loadDocs;qd.onchange=loadSlots;qdt.onchange=loadSlots;
+ (async()=>{
+  const cl=await api('clinics');
+  if(cl.expired)return;
+  (cl.rows||[]).forEach(r=>qc.add(new Option(r[1],r[0])));
+  loadDocs()})()}
+
+// ---------------- patient: My profile ----------------
+function viewProfile(){
+ const c=$('<div class="card wide prof"><div id="pf"><span class="note">loading...</span></div></div>');
+ main.appendChild(c);
+ const box=c.querySelector('#pf');
+ const PEN='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>';
+ const LOCK='<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>';
+ let P=null, flash='';
+ const val=k=>{const v=P[k];return v==null||v==='-'?'':String(v)};
+ const show=k=>val(k)?esc(val(k)):'<i>Not set</i>';
+
+ function ro(label,k,extra){return `<div class="pr"><span class="pl">${label}</span><span class="pv">${show(k)}${extra||''}</span></div>`}
+ function ed(label,k){return `<div class="pr" data-k="${k}"><span class="pl">${label}</span><span class="pv">${show(k)}</span><button class="pen" type="button" title="Edit ${label.toLowerCase()}" aria-label="Edit ${label.toLowerCase()}">${PEN}</button></div>`}
+
+ function render(){
+  const ini=val('name').split(/\s+/).slice(0,2).map(w=>w[0]||'').join('').toUpperCase()||'?';
+  box.innerHTML=`<div class="phead"><div class="avatar">${esc(ini)}</div>
+    <div><h2>${esc(val('name'))}</h2><div class="note" style="margin:2px 0 0">Patient ID ${esc(P.id)} · ${esc(P.gender)} · ${esc(P.age)} years</div></div></div>
+   <div id="pm">${flash}</div>
+   <div class="psec">Contact</div>
+   <div class="pr"><span class="pl">Phone (your login)</span><span class="pv">${esc(P.phone)}</span><span class="lock" title="Your phone number is your username. Ask reception to change it.">${LOCK}</span></div>
+   ${ed('Email','email')}${ed('Address','address')}
+   <div class="psec">Personal</div>${ro('Date of birth','dob')}${ro('Gender','gender')}
+   <div class="psec">Emergency contact</div>${ro('Name','ecName')}${ro('Number','ecNumber')}
+   <div class="psec">Medical</div>${ro('History / allergies','history')}
+   <p class="note" style="margin-top:14px">Click the pencil to edit your email or address. To change anything else, please contact reception.</p>`;
+  box.querySelectorAll('.pr[data-k] .pen').forEach(b=>b.onclick=()=>edit(b.closest('.pr')));
+ }
+
+ function edit(row){
+  const k=row.dataset.k, label=row.querySelector('.pl').textContent;
+  row.innerHTML=`<span class="pl">${label}</span><form><input name="v" type="${k==='email'?'email':'text'}" value="${esc(val(k))}" ${k==='address'?'required':''} autocomplete="off">
+   <button class="run" type="submit">Save</button><button class="sm" type="button" id="cx">Cancel</button></form>`;
+  const f=row.querySelector('form'), inp=f.v;
+  inp.focus();inp.select();
+  const cancel=()=>{flash='';render()};
+  row.querySelector('#cx').onclick=cancel;
+  inp.onkeydown=e=>{if(e.key==='Escape')cancel()};
+  f.onsubmit=async e=>{e.preventDefault();
+   const data={email:val('email'),address:val('address')};   // server needs both; send the other one unchanged
+   data[k]=inp.value.trim();
+   f.querySelectorAll('input,button').forEach(x=>x.disabled=true);
+   const j=await api('profile-update',data);
+   if(j.expired)return;
+   if(j.error){
+    box.querySelector('#pm').innerHTML=`<div class="err" style="margin:8px 0">✗ ${esc(j.error)}</div>`;
+    f.querySelectorAll('input,button').forEach(x=>x.disabled=false);inp.focus();return}
+   await load(`<div class="ok" style="margin:8px 0">✓ ${esc(label)} updated</div>`)}}
+
+ async function load(msg){
+  const j=await api('patients',{});                          // server pins id to you
+  if(j.expired)return;
+  if(j.error||!j.rows.length){box.innerHTML=`<div class="err">✗ ${esc(j.error||'Profile not found')}</div>`;return}
+  P=Object.fromEntries(j.cols.map((n,i)=>[n,j.rows[0][i]]));
+  flash=msg||'';render()}
+ load()}
+// ---------------- login / session ----------------
+function showLogin(msg,ok){
+ ME=null;nav.innerHTML='';who.textContent='';outBtn.hidden=true;
+ const tile=(k,l)=>`<div class="tile"><b data-k="${k}">–</b><span>${l}</span></div>`;
+ main.innerHTML=`<div class="landing">
+  <section class="hero">
+   <h1>Your smile, scheduled.</h1>
+   <p>Book dental appointments online, see your visit history and receipts, and skip the waiting-room phone calls.</p>
+   <div class="tiles" id="tiles">${tile('patients','patients trust us')}${tile('doctors','specialist doctors')}${tile('clinics','clinics')}${tile('visits','visits completed')}</div>
+   <div class="psec" style="margin-top:0">Our clinics</div><div id="clist"><span class="note">loading...</span></div>
+   <div class="psec">How it works</div>
+   <ol class="steps"><li>Create a free account with your phone number</li><li>Pick a clinic, a doctor and a free time</li><li>Get checked in, then see your treatment history and receipts</li></ol>
+   <p class="note" style="margin:14px 0 0">Doctors and clinic staff: sign in with your work email.</p>
+  </section>
+  <div class="card login"><h3>Sign in</h3><div class="note">Doctors: email · Reception/Admin: staff email · Patients: phone number</div>
+   <form id="lf"><div><label>username</label><input name="username" autocomplete="username" required></div>
+   <div><label>password</label><input name="password" type="password" autocomplete="current-password" required></div>
+   <div><button class="run" type="submit">Log in</button></div></form>
+   <div class="res" id="lmsg">${msg?`<div class="${ok?'ok':'err'}">${ok?'✓':'✗'} ${esc(msg)}</div>`:''}</div>
+   <div class="note" style="margin:10px 0 0"><a href="#" id="fg">Forgot password?</a> · New patient? <a href="#" id="su">Create an account</a></div></div></div>`;
+ document.getElementById('su').onclick=e=>{e.preventDefault();showSignup()};
+ document.getElementById('fg').onclick=e=>{e.preventDefault();showForgot()};
+ const f=document.getElementById('lf');
+ f.onsubmit=async e=>{e.preventDefault();
+  const m=document.getElementById('lmsg');m.innerHTML='<span class="note">signing in...</span>';
+  try{
+   const r=await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams(new FormData(f))});
+   const j=await r.json();
+   if(j.error)m.innerHTML=`<div class="err">✗ ${esc(j.error)}</div>`;else start(j);
+  }catch(x){m.innerHTML=`<div class="err">✗ cannot reach backend: ${esc(x.message)}</div>`}};
+ f.username.focus();
+ loadHero()}
+
+async function loadHero(){
+ try{
+  const j=await (await fetch('/api/public-stats')).json();
+  if(j.error)throw 0;
+  document.querySelectorAll('#tiles b').forEach(b=>countUp(b,j[b.dataset.k]||0));
+  const cl=document.getElementById('clist');
+  if(cl)cl.innerHTML=(j.clinicList||[]).map(c=>`<div class="cl"><b>${esc(c.name)}</b><span>${esc(c.category)} · ${esc(c.hours)}</span></div>`).join('')||'<span class="note">-</span>';
+ }catch(e){
+  const cl=document.getElementById('clist');if(cl)cl.innerHTML='';
+  document.querySelectorAll('#tiles b').forEach(b=>b.closest('.tile').remove())}}   // stats unavailable: hide tiles, keep the page clean
+
+function showSignup(){
+ME=null;nav.innerHTML='';who.textContent='';outBtn.hidden=true;
+main.innerHTML=`<div class="card login" style="max-width:600px"><h3>Create patient account</h3>
+<div class="note">Your 10-digit phone number will be your username. Password: 8+ characters with a letter and a digit.</div>
+<form id="sf" style="grid-template-columns:1fr 1fr">
+  <div><label>name</label><input name="name" required></div>
+  <div><label>gender</label><select name="gender"><option>Male</option><option>Female</option><option>Other</option></select></div>
+  <div><label>date of birth</label><input name="dob" type="date" max="${today}" required></div>
+  <div><label>phone (username)</label><input name="phone" inputmode="numeric" maxlength="10" pattern="\\d{10}" required></div>
+  <div><label>email (optional)</label><input name="email" type="email"></div>
+  <div><label>address</label><input name="address" required></div>
+  <div><label>emergency contact name</label><input name="ecName"></div>
+  <div><label>emergency contact number</label><input name="ecNumber" inputmode="numeric" maxlength="10" pattern="\\d{10}"></div>
+  <div style="grid-column:1/-1"><label>medical history / allergies (optional)</label><input name="history"></div>
+  <div><label>password</label><input name="password" type="password" autocomplete="new-password" required></div>
+  <div><label>confirm password</label><input name="confirm" type="password" autocomplete="new-password" required></div>
+  <div style="grid-column:1/-1"><button class="run" type="submit">Create account</button> <a href="#" id="bk" style="margin-left:12px">Back to sign in</a></div>
+</form><div class="res" id="smsg"></div></div>`;
+document.getElementById('bk').onclick=e=>{e.preventDefault();showLogin()};
+const f=document.getElementById('sf');
+f.onsubmit=async e=>{e.preventDefault();
+const m=document.getElementById('smsg'), fd=new FormData(f);
+if(fd.get('password')!==fd.get('confirm')){m.innerHTML='<div class="err">✗ Passwords do not match</div>';return}
+fd.delete('confirm');
+m.innerHTML='<span class="note">creating account...</span>';
+try{
+  const r=await fetch('/api/signup',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams(fd)});
+  const j=await r.json();
+  if(j.error)m.innerHTML=`<div class="err">✗ ${esc(j.error)}</div>`;else start(j);
+}catch(x){m.innerHTML=`<div class="err">✗ cannot reach backend: ${esc(x.message)}</div>`}};
+f.name.focus()}
+
+function showForgot(){
+ ME=null;nav.innerHTML='';who.textContent='';outBtn.hidden=true;
+ main.innerHTML=`<div class="card login"><h3>Reset password</h3>
+  <div class="note">Enter your username (phone number for patients, email for staff). We will send a 6-digit code.</div>
+  <form id="ff"><div><label>username</label><input name="username" required></div>
+   <div id="st2" hidden>
+    <div><label>6-digit code</label><input name="code" inputmode="numeric" maxlength="6" autocomplete="one-time-code"></div>
+    <div style="margin-top:8px"><label>new password (8+ chars, letter + digit)</label><input name="password" type="password" autocomplete="new-password"></div>
+    <div style="margin-top:8px"><label>confirm new password</label><input name="confirm" type="password" autocomplete="new-password"></div>
+   </div>
+   <div><button class="run" type="submit" id="fb">Send code</button> <a href="#" id="bk2" style="margin-left:12px">Back to sign in</a></div>
+  </form><div class="res" id="fm"></div></div>`;
+ document.getElementById('bk2').onclick=e=>{e.preventDefault();showLogin()};
+ const f=document.getElementById('ff'), m=document.getElementById('fm'), st2=document.getElementById('st2'), fb=document.getElementById('fb');
+ let stage=1;
+ const post=(ep,fd)=>fetch('/api/'+ep,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams(fd)}).then(r=>r.json());
+ f.onsubmit=async e=>{e.preventDefault();
+  try{
+   if(stage===1){
+    m.innerHTML='<span class="note">sending...</span>';
+    const j=await post('forgot',{username:f.username.value});
+    if(j.error){m.innerHTML=`<div class="err">✗ ${esc(j.error)}</div>`;return}
+    m.innerHTML=`<div class="ok">✓ ${esc(j.message)}</div>`;
+    stage=2;f.username.readOnly=true;st2.hidden=false;fb.textContent='Reset password';
+    f.code.required=f.password.required=f.confirm.required=true;f.code.focus();
+   }else{
+    if(f.password.value!==f.confirm.value){m.innerHTML='<div class="err">✗ Passwords do not match</div>';return}
+    m.innerHTML='<span class="note">resetting...</span>';
+    const j=await post('reset',{username:f.username.value,code:f.code.value,password:f.password.value});
+    if(j.error)m.innerHTML=`<div class="err">✗ ${esc(j.error)}</div>`;else showLogin(j.message,true);
+   }
+  }catch(x){m.innerHTML=`<div class="err">✗ cannot reach backend: ${esc(x.message)}</div>`}};
+ f.username.focus()}
+
+function start(me){
+ ME=me;DEF.clinicId=me.clinicId??'';
+ who.innerHTML=`${esc(me.username)} · <b>${esc(me.role)}</b>${me.clinicId?' · clinic '+me.clinicId:''}`;
+ outBtn.hidden=false;nav.innerHTML='';
+ Object.keys(VIEW[me.role]).forEach(k=>{const b=document.createElement('button');b.textContent=k;b.onclick=()=>show(k);nav.appendChild(b)});
+ show(Object.keys(VIEW[me.role])[0])}
+
+outBtn.onclick=async()=>{try{await fetch('/api/logout',{method:'POST'})}catch(e){} showLogin()};
+
+(async()=>{
+ try{const r=await fetch('/api/me');if(r.ok)start(await r.json());else showLogin()}
+ catch(e){showLogin('Cannot reach backend')}
+})();
 </script></body></html>

@@ -19,7 +19,8 @@ public final class ReportDao {
     private static final String APPT_COLS =
             "SELECT a.AppointmentID AS ID, a.AppointmentDate AS Date, a.AppointmentTime AS Time, p.PatientName AS Patient,"
           + " d.DoctorName AS Doctor, cl.ClinicName AS Clinic, o.OperatoryType AS Room, a.AppointmentType AS Type,"
-          + " a.AppointmentStatus AS Status, a.ChiefComplaint AS Complaint";
+          + " a.AppointmentStatus AS Status, a.ChiefComplaint AS Complaint, a.PatientID AS PatientID,"
+          + " a.DoctorID AS DoctorID, a.ClinicID AS ClinicID";
 
     /** Search appointments by any combination of patient / doctor / clinic / date (null = don't filter). */
     public Table searchAppointments(Connection c, Integer patientId, Integer doctorId, Integer clinicId, LocalDate date) throws SQLException {
@@ -50,42 +51,57 @@ public final class ReportDao {
                 + " ORDER BY FIELD(s.DayOfWeek,'Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'), s.StartTime", doctorId);
     }
 
-    /** Report 3: full visit history of a patient with treatment + payment. */
-    public Table patientHistory(Connection c, int patientId) throws SQLException {
-        return Sql.table(c, "SELECT a.AppointmentID AS ID, a.AppointmentDate AS Date, d.DoctorName AS Doctor, cl.ClinicName AS Clinic,"
+    /** Report 3: full visit history of a patient with treatment + payment (optionally only visits at one clinic). */
+    public Table patientHistory(Connection c, int patientId, Integer clinicId) throws SQLException {
+        List<Object> args = new ArrayList<>(List.of(patientId));
+        String sql = "SELECT a.AppointmentID AS ID, a.AppointmentDate AS Date, d.DoctorName AS Doctor, cl.ClinicName AS Clinic,"
                 + " a.AppointmentStatus AS Status, t.TreatmentPerformed AS Treatment, t.Diagnosis, t.TreatmentCost AS Cost,"
-                + " pay.PaymentStatus AS Payment, t.FollowUpRecommendations AS FollowUp"
+                + " pay.PaymentStatus AS Payment, pay.ReceiptNumber AS Receipt, t.FollowUpRecommendations AS FollowUp"
                 + " FROM APPOINTMENT a JOIN DOCTOR d ON d.DoctorID=a.DoctorID JOIN CLINIC cl ON cl.ClinicID=a.ClinicID"
                 + " LEFT JOIN TREATMENT t ON t.AppointmentID=a.AppointmentID LEFT JOIN PAYMENT pay ON pay.AppointmentID=a.AppointmentID"
-                + " WHERE a.PatientID=? ORDER BY a.AppointmentDate DESC, a.AppointmentTime DESC", patientId);
+                + " WHERE a.PatientID=?";
+        if (clinicId != null) { sql += " AND a.ClinicID=?"; args.add(clinicId); }
+        sql += " ORDER BY a.AppointmentDate DESC, a.AppointmentTime DESC";
+        return Sql.table(c, sql, args.toArray());
     }
 
-    /** Report 4: clinic-wise revenue in a date range (every clinic listed, even with zero). */
-    public Table clinicRevenue(Connection c, LocalDate from, LocalDate to) throws SQLException {
-        return Sql.table(c, "SELECT cl.ClinicID AS ID, cl.ClinicName AS Clinic, COUNT(a.AppointmentID) AS Appointments,"
+    /** Report 4: clinic-wise revenue in a date range (all clinics, or just one). */
+    public Table clinicRevenue(Connection c, LocalDate from, LocalDate to, Integer clinicId) throws SQLException {
+        List<Object> args = new ArrayList<>(List.of(from, to));
+        String sql = "SELECT cl.ClinicID AS ID, cl.ClinicName AS Clinic, COUNT(a.AppointmentID) AS Appointments,"
                 + " COUNT(pay.PaymentID) AS Payments,"
                 + " COALESCE(SUM(CASE WHEN pay.PaymentStatus='Paid' THEN pay.Amount END),0) AS Collected,"
                 + " COALESCE(SUM(CASE WHEN pay.PaymentStatus='Pending' THEN pay.Amount END),0) AS Pending"
                 + " FROM CLINIC cl LEFT JOIN APPOINTMENT a ON a.ClinicID=cl.ClinicID AND a.AppointmentDate BETWEEN ? AND ?"
-                + " LEFT JOIN PAYMENT pay ON pay.AppointmentID=a.AppointmentID"
-                + " GROUP BY cl.ClinicID, cl.ClinicName ORDER BY Collected DESC", from, to);
+                + " LEFT JOIN PAYMENT pay ON pay.AppointmentID=a.AppointmentID";
+        if (clinicId != null) { sql += " WHERE cl.ClinicID=?"; args.add(clinicId); }
+        sql += " GROUP BY cl.ClinicID, cl.ClinicName ORDER BY Collected DESC";
+        return Sql.table(c, sql, args.toArray());
     }
 
-    /** Report 5: payment summary by mode and status. */
-    public Table paymentSummary(Connection c, LocalDate from, LocalDate to) throws SQLException {
-        return Sql.table(c, "SELECT PaymentMode AS Mode, PaymentStatus AS Status, COUNT(*) AS Payments, SUM(Amount) AS Total,"
-                + " ROUND(AVG(Amount),2) AS Average FROM PAYMENT WHERE PaymentDate BETWEEN ? AND ?"
-                + " GROUP BY PaymentMode, PaymentStatus ORDER BY PaymentMode, PaymentStatus", from, to);
+    /** Report 5: payment summary by mode and status (payments of appointments at one clinic, or all). */
+    public Table paymentSummary(Connection c, LocalDate from, LocalDate to, Integer clinicId) throws SQLException {
+        List<Object> args = new ArrayList<>(List.of(from, to));
+        String sql = "SELECT pay.PaymentMode AS Mode, pay.PaymentStatus AS Status, COUNT(*) AS Payments, SUM(pay.Amount) AS Total,"
+                + " ROUND(AVG(pay.Amount),2) AS Average FROM PAYMENT pay JOIN APPOINTMENT a ON a.AppointmentID=pay.AppointmentID"
+                + " WHERE pay.PaymentDate BETWEEN ? AND ?";
+        if (clinicId != null) { sql += " AND a.ClinicID=?"; args.add(clinicId); }
+        sql += " GROUP BY pay.PaymentMode, pay.PaymentStatus ORDER BY pay.PaymentMode, pay.PaymentStatus";
+        return Sql.table(c, sql, args.toArray());
     }
 
-    /** Extra: doctor-wise workload and revenue. */
-    public Table doctorWorkload(Connection c, LocalDate from, LocalDate to) throws SQLException {
-        return Sql.table(c, "SELECT d.DoctorID AS ID, d.DoctorName AS Doctor, d.Specialisation,"
+    /** Extra: doctor-wise workload and revenue. With a clinic: only doctors rostered there, only that clinic's appointments. */
+    public Table doctorWorkload(Connection c, LocalDate from, LocalDate to, Integer clinicId) throws SQLException {
+        List<Object> args = new ArrayList<>(List.of(from, to));
+        String sql = "SELECT d.DoctorID AS ID, d.DoctorName AS Doctor, d.Specialisation,"
                 + " COUNT(a.AppointmentID) AS Appointments, SUM(a.AppointmentStatus='Show') AS Completed,"
                 + " SUM(a.AppointmentStatus='No-Show') AS NoShows, SUM(a.AppointmentStatus='Cancelled') AS Cancelled,"
                 + " COALESCE(SUM(CASE WHEN pay.PaymentStatus='Paid' THEN pay.Amount END),0) AS Revenue"
-                + " FROM DOCTOR d LEFT JOIN APPOINTMENT a ON a.DoctorID=d.DoctorID AND a.AppointmentDate BETWEEN ? AND ?"
-                + " LEFT JOIN PAYMENT pay ON pay.AppointmentID=a.AppointmentID"
-                + " GROUP BY d.DoctorID, d.DoctorName, d.Specialisation ORDER BY Revenue DESC", from, to);
+                + " FROM DOCTOR d LEFT JOIN APPOINTMENT a ON a.DoctorID=d.DoctorID AND a.AppointmentDate BETWEEN ? AND ?";
+        if (clinicId != null) { sql += " AND a.ClinicID=?"; args.add(clinicId); }
+        sql += " LEFT JOIN PAYMENT pay ON pay.AppointmentID=a.AppointmentID";
+        if (clinicId != null) { sql += " WHERE d.DoctorID IN (SELECT DoctorID FROM DOCTOR_SCHEDULE WHERE ClinicID=?)"; args.add(clinicId); }
+        sql += " GROUP BY d.DoctorID, d.DoctorName, d.Specialisation ORDER BY Revenue DESC";
+        return Sql.table(c, sql, args.toArray());
     }
 }
